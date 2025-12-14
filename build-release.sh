@@ -56,11 +56,11 @@ fi
 
 # Create zip file
 echo "Creating zip file..."
+ORIGINAL_DIR=$(pwd)
 cd "${TEMP_DIR}"
 zip -r "${ZIP_NAME}" "${PLUGIN_NAME}" > /dev/null
-
-# Move zip to release directory
-mv "${ZIP_NAME}" "$(pwd)/${RELEASE_DIR}/"
+cd "${ORIGINAL_DIR}"
+mv "${TEMP_DIR}/${ZIP_NAME}" "${RELEASE_DIR}/"
 
 # Cleanup
 cd - > /dev/null

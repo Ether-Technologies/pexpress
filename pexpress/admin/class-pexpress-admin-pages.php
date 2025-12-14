@@ -315,6 +315,25 @@ class PExpress_Admin_Pages
         }
 
         $changelog = array(
+            '1.0.5' => array(
+                'date' => date('Y-m-d'),
+                'added' => array(
+                    __('Redesigned customer order tracking with horizontal progress bar', 'pexpress'),
+                    __('Click navigation to order detail pages from tracking cards', 'pexpress'),
+                    __('Clean minimal design for order tracking interface', 'pexpress'),
+                ),
+                'improved' => array(
+                    __('Customer order tracking UI with single-layer progress visualization', 'pexpress'),
+                    __('Mobile responsive design for order tracking cards', 'pexpress'),
+                    __('Search and filter layout to prevent overlapping elements', 'pexpress'),
+                    __('Progress bar with milestone labels directly under each stage', 'pexpress'),
+                ),
+                'fixed' => array(
+                    __('Fixed search box and filter dropdown overlapping issue', 'pexpress'),
+                    __('Removed duplicate progress visualization layers', 'pexpress'),
+                    __('Improved mobile responsiveness for order tracking interface', 'pexpress'),
+                ),
+            ),
             '1.0.4' => array(
                 'date' => '2024-12-19',
                 'added' => array(
@@ -811,7 +830,7 @@ Site: {{site}}', 'pexpress')); ?></textarea>
                     <div class="polar-version-header">
                         <h2>
                             <?php echo esc_html($version); ?>
-                            <?php if ($version === '1.0.4') : ?>
+                            <?php if ($version === '1.0.5') : ?>
                                 <span class="polar-badge latest"><?php esc_html_e('Latest', 'pexpress'); ?></span>
                             <?php endif; ?>
                         </h2>

@@ -21,7 +21,7 @@ add_filter('the_content', 'pexpress_detect_shortcodes', 1);
 function pexpress_detect_shortcodes($content)
 {
     global $pexpress_shortcode_used;
-    $shortcodes = array('polar_hr', 'polar_agency', 'polar_delivery', 'polar_sr', 'polar_fridge', 'polar_distributor', 'polar_product_provider', 'polar_support');
+    $shortcodes = array('polar_hr', 'polar_agency', 'polar_delivery', 'polar_sr', 'polar_fridge', 'polar_distributor', 'polar_product_provider', 'polar_support', 'track_my_order');
     foreach ($shortcodes as $shortcode) {
         if (has_shortcode($content, $shortcode)) {
             $pexpress_shortcode_used = true;
@@ -37,10 +37,32 @@ add_action('wp_head', 'pexpress_output_shortcode_css', 99);
 function pexpress_output_shortcode_css()
 {
     global $pexpress_shortcode_used;
-    if ($pexpress_shortcode_used && !wp_style_is('polar-express', 'enqueued') && !wp_style_is('polar-express', 'done')) {
-        $css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar.css';
-        $version = PEXPRESS_VERSION;
-        echo '<link rel="stylesheet" id="polar-express-css" href="' . esc_url($css_url) . '?ver=' . esc_attr($version) . '" type="text/css" media="all">' . "\n";
+    if ($pexpress_shortcode_used) {
+        // Output main polar CSS
+        if (!wp_style_is('polar-express', 'enqueued') && !wp_style_is('polar-express', 'done')) {
+            $css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar.css';
+            $version = PEXPRESS_VERSION;
+            echo '<link rel="stylesheet" id="polar-express-css" href="' . esc_url($css_url) . '?ver=' . esc_attr($version) . '" type="text/css" media="all">' . "\n";
+        }
+        // Output order tracking CSS if track_my_order shortcode is used
+        global $post;
+        $post_content = '';
+        if (isset($post) && isset($post->post_content)) {
+            $post_content = $post->post_content;
+        } elseif (isset($_GET['post']) || isset($_POST['post_ID'])) {
+            $post_id = isset($_GET['post']) ? absint($_GET['post']) : absint($_POST['post_ID']);
+            $temp_post = get_post($post_id);
+            if ($temp_post) {
+                $post_content = $temp_post->post_content;
+            }
+        }
+        if (has_shortcode($post_content, 'track_my_order')) {
+            if (!wp_style_is('polar-order-tracking', 'enqueued') && !wp_style_is('polar-order-tracking', 'done')) {
+                $tracking_css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar-order-tracking.css';
+                $version = PEXPRESS_VERSION;
+                echo '<link rel="stylesheet" id="polar-order-tracking-css" href="' . esc_url($tracking_css_url) . '?ver=' . esc_attr($version) . '" type="text/css" media="all">' . "\n";
+            }
+        }
     }
 }
 
@@ -789,4 +811,104 @@ function polar_order_information_shortcode($atts)
     </div>
 <?php
     return ob_get_clean();
+}
+
+/**
+ * Track My Order Shortcode - Customer Order Tracking List
+ */
+add_shortcode('track_my_order', 'pexpress_track_my_order_shortcode');
+function pexpress_track_my_order_shortcode($atts)
+{
+    // Don't execute during REST API content save/update requests
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
+        if (in_array($method, array('POST', 'PUT', 'PATCH'), true)) {
+            $route = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+            if (preg_match('#/wp/v2/(posts|pages)/#', $route)) {
+                return '';
+            }
+        }
+    }
+
+    // Check if user is logged in
+    if (!is_user_logged_in()) {
+        return '<div class="polar-customer-tracking"><p>' . esc_html__('Please log in to view your orders.', 'pexpress') . '</p></div>';
+    }
+
+    $current_user = wp_get_current_user();
+
+    // Get all orders for the current customer
+    $customer_orders = wc_get_orders(array(
+        'customer_id' => $current_user->ID,
+        'status' => 'any',
+        'limit' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ));
+
+    if (!is_array($customer_orders)) {
+        $customer_orders = array();
+    }
+
+    // Set flag to enqueue assets
+    global $pexpress_shortcode_used;
+    $pexpress_shortcode_used = true;
+
+    // Enqueue main polar CSS first (for base styles)
+    wp_enqueue_style(
+        'polar-express',
+        PEXPRESS_PLUGIN_URL . 'assets/css/polar.css',
+        array(),
+        PEXPRESS_VERSION
+    );
+
+    // Enqueue order tracking specific CSS
+    wp_enqueue_style(
+        'polar-order-tracking',
+        PEXPRESS_PLUGIN_URL . 'assets/css/polar-order-tracking.css',
+        array('polar-express'),
+        PEXPRESS_VERSION
+    );
+
+    // Force output CSS in head as fallback - use higher priority to ensure it loads
+    static $css_output = false;
+    if (!$css_output) {
+        add_action('wp_head', function () {
+            $css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar-order-tracking.css';
+            $version = PEXPRESS_VERSION;
+            echo '<link rel="stylesheet" id="polar-order-tracking-css-head" href="' . esc_url($css_url) . '?ver=' . esc_attr($version) . '" type="text/css" media="all">' . "\n";
+        }, 5);
+        $css_output = true;
+    }
+
+    wp_enqueue_script(
+        'polar-customer-tracking',
+        PEXPRESS_PLUGIN_URL . 'assets/js/polar-customer-tracking.js',
+        array('jquery', 'heartbeat'),
+        PEXPRESS_VERSION,
+        true
+    );
+
+    wp_localize_script(
+        'polar-customer-tracking',
+        'polarCustomerTracking',
+        array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('polar_customer_tracking_nonce'),
+        )
+    );
+
+    // Make variables available to template
+    // $customer_orders is already set above
+
+    ob_start();
+    include PEXPRESS_PLUGIN_DIR . 'templates/customer-order-tracking.php';
+    $output = ob_get_clean();
+
+    // Return output or error message if empty
+    if (empty($output)) {
+        return '<div class="polar-customer-tracking"><p>' . esc_html__('An error occurred while loading your orders.', 'pexpress') . '</p></div>';
+    }
+
+    return $output;
 }
