@@ -1361,4 +1361,9 @@ input[type="password"]:focus {
   .polar-modal-body {
     padding: 20px;
   }
+
+  /* Responsive 2-column grid for settings */
+  .pexpress-settings-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

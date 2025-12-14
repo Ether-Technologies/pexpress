@@ -185,6 +185,92 @@ class PExpress
         if (is_admin() && !wp_doing_ajax()) {
             add_action('admin_init', array($this, 'maybe_redirect_to_setup'));
         }
+
+        // Hook into wp_mail to log all emails
+        add_action('phpmailer_init', array($this, 'log_wp_mail_emails'), 999);
+        add_action('wp_mail_failed', array($this, 'log_wp_mail_failed'), 10, 1);
+        add_filter('wp_mail_succeeded', array($this, 'log_wp_mail_succeeded'), 10, 2);
+    }
+
+    /**
+     * Store email data for logging before sending
+     *
+     * @param PHPMailer $phpmailer PHPMailer instance
+     */
+    public function log_wp_mail_emails($phpmailer)
+    {
+        // Skip if already logged by PExpress_Email class (to avoid duplicates)
+        if (defined('PEXPRESS_EMAIL_LOGGED') && PEXPRESS_EMAIL_LOGGED) {
+            return;
+        }
+
+        // Only log if email logging is enabled
+        if (!class_exists('PExpress_Email_Log')) {
+            return;
+        }
+
+        // Get email data from phpmailer
+        $to_addresses = $phpmailer->getToAddresses();
+        $to = is_array($to_addresses) && !empty($to_addresses) ? implode(', ', array_column($to_addresses, 0)) : '';
+        $subject = $phpmailer->Subject;
+        $message = $phpmailer->Body;
+        $headers = array();
+
+        // Extract headers
+        if (!empty($phpmailer->getCustomHeaders())) {
+            foreach ($phpmailer->getCustomHeaders() as $header) {
+                $headers[] = $header[0] . ': ' . $header[1];
+            }
+        }
+
+        // Log the email attempt
+        $log_id = PExpress_Email_Log::log($to, $subject, $message, $headers, 'wp_mail', 'pending');
+
+        // Store log_id globally for later use
+        if ($log_id) {
+            global $pexpress_current_log_id;
+            $pexpress_current_log_id = $log_id;
+            $phpmailer->PExpressLogId = $log_id;
+        }
+    }
+
+    /**
+     * Update log when email fails
+     *
+     * @param WP_Error $wp_error Error object
+     */
+    public function log_wp_mail_failed($wp_error)
+    {
+        // Try to get log_id from global or error data
+        global $pexpress_current_log_id;
+        $log_id = isset($pexpress_current_log_id) ? $pexpress_current_log_id : null;
+
+        if ($log_id && class_exists('PExpress_Email_Log')) {
+            PExpress_Email_Log::update_log($log_id, 'failed', $wp_error->get_error_message());
+        }
+    }
+
+    /**
+     * Update log when email succeeds
+     *
+     * @param array $mail_data Mail data
+     * @param array $result Result array
+     * @return array Unmodified mail data
+     */
+    public function log_wp_mail_succeeded($mail_data, $result)
+    {
+        // Try to get log_id from global
+        global $pexpress_current_log_id;
+        $log_id = isset($pexpress_current_log_id) ? $pexpress_current_log_id : null;
+
+        if ($log_id && class_exists('PExpress_Email_Log') && isset($result['result']) && $result['result']) {
+            PExpress_Email_Log::update_log($log_id, 'success', '', null, '', 'wp_mail');
+        }
+
+        // Reset global
+        $pexpress_current_log_id = null;
+
+        return $mail_data;
     }
 
     /**

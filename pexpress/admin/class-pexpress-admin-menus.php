@@ -382,159 +382,195 @@ class PExpress_Admin_Menus
 
         $total_pages = ceil($total_logs / $per_page);
 
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html__('Email Log', 'pexpress'); ?></h1>
+?>
+        <div class="wrap pexpress-email-log-wrap">
+            <div style="background: linear-gradient(135deg, #2271b1 0%, #135e96 100%); padding: 30px; margin: -20px -20px 20px -20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; display: flex; align-items: center; gap: 12px;">
+                    <span class="dashicons dashicons-email-alt" style="font-size: 32px; width: 32px; height: 32px;"></span>
+                    <?php echo esc_html__('Email Log', 'pexpress'); ?>
+                </h1>
+                <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.95; font-size: 14px;"><?php echo esc_html__('Monitor and track all email notifications sent through the system', 'pexpress'); ?></p>
+            </div>
 
-            <div class="pexpress-email-log-filters" style="margin: 20px 0;">
-                <form method="get" action="">
+            <div class="pexpress-email-log-filters" style="background: #fff; padding: 20px; margin: 0 0 20px 0; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); border-radius: 6px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <form method="get" action="" style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 300px;">
                     <input type="hidden" name="page" value="polar-express-email-log">
-                    <select name="status">
+                    <label style="font-weight: 500; color: #1d2327; margin-right: 5px;"><?php echo esc_html__('Filter:', 'pexpress'); ?></label>
+                    <select name="status" style="padding: 6px 12px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 14px; min-width: 150px;">
                         <option value=""><?php echo esc_html__('All Statuses', 'pexpress'); ?></option>
                         <option value="pending" <?php selected($status_filter, 'pending'); ?>><?php echo esc_html__('Pending', 'pexpress'); ?></option>
                         <option value="success" <?php selected($status_filter, 'success'); ?>><?php echo esc_html__('Success', 'pexpress'); ?></option>
                         <option value="failed" <?php selected($status_filter, 'failed'); ?>><?php echo esc_html__('Failed', 'pexpress'); ?></option>
                     </select>
-                    <input type="submit" class="button" value="<?php echo esc_attr__('Filter', 'pexpress'); ?>">
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-email-log&action=clear_all&_wpnonce=' . wp_create_nonce('pexpress_email_log_action'))); ?>" 
-                       class="button" 
-                       onclick="return confirm('<?php echo esc_js(__('Are you sure you want to clear all logs?', 'pexpress')); ?>');">
-                        <?php echo esc_html__('Clear All Logs', 'pexpress'); ?>
-                    </a>
+                    <input type="submit" class="button button-primary" value="<?php echo esc_attr__('Apply Filter', 'pexpress'); ?>" style="margin: 0;">
                 </form>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-email-log&action=clear_all&_wpnonce=' . wp_create_nonce('pexpress_email_log_action'))); ?>"
+                    class="button"
+                    style="background: #dc3232; border-color: #dc3232; color: #fff; margin: 0;"
+                    onclick="return confirm('<?php echo esc_js(__('Are you sure you want to clear all logs?', 'pexpress')); ?>');">
+                    <span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+                    <?php echo esc_html__('Clear All Logs', 'pexpress'); ?>
+                </a>
             </div>
 
-            <div class="pexpress-email-log-stats" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4;">
-                <strong><?php echo esc_html__('Total Logs:', 'pexpress'); ?></strong> <?php echo number_format($total_logs); ?> |
-                <strong><?php echo esc_html__('Success:', 'pexpress'); ?></strong> <?php echo number_format(PExpress_Email_Log::get_log_count('success')); ?> |
-                <strong><?php echo esc_html__('Failed:', 'pexpress'); ?></strong> <?php echo number_format(PExpress_Email_Log::get_log_count('failed')); ?> |
-                <strong><?php echo esc_html__('Pending:', 'pexpress'); ?></strong> <?php echo number_format(PExpress_Email_Log::get_log_count('pending')); ?>
+            <div class="pexpress-email-log-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 0 0 20px 0;">
+                <div style="background: linear-gradient(135deg, #2271b1 0%, #135e96 100%); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #fff;">
+                    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Total Logs', 'pexpress'); ?></div>
+                    <div style="font-size: 32px; font-weight: 700; line-height: 1;"><?php echo number_format($total_logs); ?></div>
+                </div>
+                <div style="background: linear-gradient(135deg, #00a32a 0%, #007a20 100%); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #fff;">
+                    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Success', 'pexpress'); ?></div>
+                    <div style="font-size: 32px; font-weight: 700; line-height: 1;"><?php echo number_format(PExpress_Email_Log::get_log_count('success')); ?></div>
+                </div>
+                <div style="background: linear-gradient(135deg, #dc3232 0%, #b32d2e 100%); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #fff;">
+                    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Failed', 'pexpress'); ?></div>
+                    <div style="font-size: 32px; font-weight: 700; line-height: 1;"><?php echo number_format(PExpress_Email_Log::get_log_count('failed')); ?></div>
+                </div>
+                <div style="background: linear-gradient(135deg, #ffb900 0%, #dba617 100%); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #fff;">
+                    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Pending', 'pexpress'); ?></div>
+                    <div style="font-size: 32px; font-weight: 700; line-height: 1;"><?php echo number_format(PExpress_Email_Log::get_log_count('pending')); ?></div>
+                </div>
             </div>
 
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;"><?php echo esc_html__('ID', 'pexpress'); ?></th>
-                        <th><?php echo esc_html__('To', 'pexpress'); ?></th>
-                        <th><?php echo esc_html__('Subject', 'pexpress'); ?></th>
-                        <th style="width: 120px;"><?php echo esc_html__('Method', 'pexpress'); ?></th>
-                        <th style="width: 100px;"><?php echo esc_html__('Status', 'pexpress'); ?></th>
-                        <th style="width: 120px;"><?php echo esc_html__('Response Code', 'pexpress'); ?></th>
-                        <th style="width: 150px;"><?php echo esc_html__('Date', 'pexpress'); ?></th>
-                        <th style="width: 100px;"><?php echo esc_html__('Actions', 'pexpress'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($logs)) : ?>
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 20px;">
-                                <?php echo esc_html__('No email logs found.', 'pexpress'); ?>
-                            </td>
+            <div style="background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); border-radius: 6px; overflow: hidden;">
+                <table class="wp-list-table widefat fixed striped" style="margin: 0; border: none;">
+                    <thead>
+                        <tr style="background: #f6f7f7;">
+                            <th style="width: 80px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('ID', 'pexpress'); ?></th>
+                            <th style="padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('To', 'pexpress'); ?></th>
+                            <th style="padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('Subject', 'pexpress'); ?></th>
+                            <th style="width: 120px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('Method', 'pexpress'); ?></th>
+                            <th style="width: 120px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('Status', 'pexpress'); ?></th>
+                            <th style="width: 120px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('Response Code', 'pexpress'); ?></th>
+                            <th style="width: 150px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1;"><?php echo esc_html__('Date', 'pexpress'); ?></th>
+                            <th style="width: 140px; padding: 15px; font-weight: 600; color: #1d2327; border-bottom: 2px solid #2271b1; text-align: center;"><?php echo esc_html__('Actions', 'pexpress'); ?></th>
                         </tr>
-                    <?php else : ?>
-                        <?php foreach ($logs as $log) : ?>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($logs)) : ?>
                             <tr>
-                                <td><?php echo esc_html($log['id']); ?></td>
-                                <td>
-                                    <strong><?php echo esc_html($log['to_email']); ?></strong>
-                                </td>
-                                <td>
-                                    <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo esc_attr($log['subject']); ?>">
-                                        <?php echo esc_html($log['subject']); ?>
+                                <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                                    <div style="color: #646970;">
+                                        <span class="dashicons dashicons-email-alt" style="font-size: 64px; width: 64px; height: 64px; display: block; margin: 0 auto 20px; opacity: 0.3;"></span>
+                                        <p style="font-size: 16px; margin: 0; font-weight: 500;"><?php echo esc_html__('No email logs found.', 'pexpress'); ?></p>
+                                        <p style="font-size: 14px; margin: 10px 0 0 0; color: #8c8f94;"><?php echo esc_html__('Email logs will appear here once emails are sent.', 'pexpress'); ?></p>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="dashicons dashicons-<?php echo $log['method'] === 'mailgun' ? 'email-alt' : 'email'; ?>" style="font-size: 16px; width: 16px; height: 16px;"></span>
-                                    <?php echo esc_html(ucfirst($log['method'])); ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    $status_class = 'pending';
-                                    $status_label = __('Pending', 'pexpress');
-                                    if ($log['status'] === 'success') {
-                                        $status_class = 'success';
-                                        $status_label = __('Success', 'pexpress');
-                                    } elseif ($log['status'] === 'failed') {
-                                        $status_class = 'error';
-                                        $status_label = __('Failed', 'pexpress');
-                                    }
-                                    ?>
-                                    <span class="status-<?php echo esc_attr($status_class); ?>" style="padding: 3px 8px; border-radius: 3px; background: <?php echo $status_class === 'success' ? '#46b450' : ($status_class === 'error' ? '#dc3232' : '#ffb900'); ?>; color: #fff; font-size: 11px;">
-                                        <?php echo esc_html($status_label); ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php if (!empty($log['response_code'])) : ?>
-                                        <code><?php echo esc_html($log['response_code']); ?></code>
-                                    <?php else : ?>
-                                        <span style="color: #999;">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($log['created_at']))); ?>
-                                </td>
-                                <td>
-                                    <a href="#" class="button button-small pexpress-view-log-details" data-log-id="<?php echo esc_attr($log['id']); ?>">
-                                        <?php echo esc_html__('View', 'pexpress'); ?>
-                                    </a>
-                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=polar-express-email-log&action=delete&log_id=' . $log['id']), 'pexpress_email_log_action')); ?>" 
-                                       class="button button-small" 
-                                       onclick="return confirm('<?php echo esc_js(__('Delete this log entry?', 'pexpress')); ?>');">
-                                        <?php echo esc_html__('Delete', 'pexpress'); ?>
-                                    </a>
-                                </td>
                             </tr>
-                            <tr class="pexpress-log-details" id="log-details-<?php echo esc_attr($log['id']); ?>" style="display: none;">
-                                <td colspan="8" style="background: #f9f9f9; padding: 20px;">
-                                    <h4><?php echo esc_html__('Log Details', 'pexpress'); ?></h4>
-                                    <table style="width: 100%;">
-                                        <tr>
-                                            <th style="text-align: left; width: 150px;"><?php echo esc_html__('Error Message:', 'pexpress'); ?></th>
-                                            <td><?php echo !empty($log['error_message']) ? esc_html($log['error_message']) : '<span style="color: #999;">-</span>'; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="text-align: left;"><?php echo esc_html__('Response Body:', 'pexpress'); ?></th>
-                                            <td>
-                                                <?php if (!empty($log['response_body'])) : ?>
-                                                    <pre style="background: #fff; padding: 10px; border: 1px solid #ddd; max-height: 200px; overflow: auto; font-size: 12px;"><?php echo esc_html($log['response_body']); ?></pre>
-                                                <?php else : ?>
-                                                    <span style="color: #999;">-</span>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th style="text-align: left;"><?php echo esc_html__('Message Preview:', 'pexpress'); ?></th>
-                                            <td>
-                                                <div style="max-height: 200px; overflow: auto; background: #fff; padding: 10px; border: 1px solid #ddd;">
-                                                    <?php echo wp_kses_post(substr($log['message'], 0, 500)); ?>
-                                                    <?php if (strlen($log['message']) > 500) : ?>
-                                                        <em>... (truncated)</em>
+                        <?php else : ?>
+                            <?php foreach ($logs as $log) : ?>
+                                <tr style="border-bottom: 1px solid #f0f0f1;">
+                                    <td style="padding: 15px; color: #646970; font-weight: 600;"><?php echo esc_html($log['id']); ?></td>
+                                    <td style="padding: 15px;">
+                                        <strong style="color: #1d2327; font-size: 14px;"><?php echo esc_html($log['to_email']); ?></strong>
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        <div style="max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1d2327;" title="<?php echo esc_attr($log['subject']); ?>">
+                                            <?php echo esc_html($log['subject']); ?>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        <span style="display: inline-flex; align-items: center; gap: 6px; color: #646970;">
+                                            <span class="dashicons dashicons-<?php echo $log['method'] === 'mailgun' ? 'email-alt' : 'email'; ?>" style="font-size: 16px; width: 16px; height: 16px; color: #2271b1;"></span>
+                                            <span style="font-size: 13px;"><?php echo esc_html(ucfirst($log['method'])); ?></span>
+                                        </span>
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        <?php
+                                        $status_class = 'pending';
+                                        $status_label = __('Pending', 'pexpress');
+                                        $status_color = '#ffb900';
+                                        if ($log['status'] === 'success') {
+                                            $status_class = 'success';
+                                            $status_label = __('Success', 'pexpress');
+                                            $status_color = '#00a32a';
+                                        } elseif ($log['status'] === 'failed') {
+                                            $status_class = 'error';
+                                            $status_label = __('Failed', 'pexpress');
+                                            $status_color = '#dc3232';
+                                        }
+                                        ?>
+                                        <span class="status-<?php echo esc_attr($status_class); ?>" style="display: inline-block; padding: 4px 10px; border-radius: 12px; background: <?php echo esc_attr($status_color); ?>; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <?php echo esc_html($status_label); ?>
+                                        </span>
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        <?php if (!empty($log['response_code'])) : ?>
+                                            <code style="background: #f6f7f7; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #2271b1; border: 1px solid #dcdcde;"><?php echo esc_html($log['response_code']); ?></code>
+                                        <?php else : ?>
+                                            <span style="color: #8c8f94; font-size: 13px;">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 15px; color: #646970; font-size: 13px;">
+                                        <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($log['created_at']))); ?>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center;">
+                                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                                            <a href="#" class="button button-small pexpress-view-log-details" data-log-id="<?php echo esc_attr($log['id']); ?>" style="padding: 4px 10px; height: auto; line-height: 1.5;">
+                                                <span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+                                            </a>
+                                            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=polar-express-email-log&action=delete&log_id=' . $log['id']), 'pexpress_email_log_action')); ?>"
+                                                class="button button-small"
+                                                style="padding: 4px 10px; height: auto; line-height: 1.5; color: #dc3232; border-color: #dc3232;"
+                                                onclick="return confirm('<?php echo esc_js(__('Delete this log entry?', 'pexpress')); ?>');">
+                                                <span class="dashicons dashicons-trash" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="pexpress-log-details" id="log-details-<?php echo esc_attr($log['id']); ?>" style="display: none;">
+                                    <td colspan="8" style="background: #f6f7f7; padding: 25px; border-top: 2px solid #2271b1;">
+                                        <div style="background: #fff; padding: 20px; border-radius: 6px; border: 1px solid #dcdcde;">
+                                            <h4 style="margin: 0 0 20px 0; color: #1d2327; font-size: 18px; font-weight: 600; padding-bottom: 10px; border-bottom: 2px solid #f0f0f1;">
+                                                <span class="dashicons dashicons-info" style="font-size: 18px; width: 18px; height: 18px; vertical-align: middle; margin-right: 8px; color: #2271b1;"></span>
+                                                <?php echo esc_html__('Log Details', 'pexpress'); ?>
+                                            </h4>
+                                            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                                                <div>
+                                                    <strong style="display: block; color: #1d2327; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Error Message', 'pexpress'); ?></strong>
+                                                    <div style="background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; color: #646970; font-size: 13px;">
+                                                        <?php echo !empty($log['error_message']) ? esc_html($log['error_message']) : '<span style="color: #8c8f94;">-</span>'; ?>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <strong style="display: block; color: #1d2327; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Response Body', 'pexpress'); ?></strong>
+                                                    <?php if (!empty($log['response_body'])) : ?>
+                                                        <pre style="background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; max-height: 200px; overflow: auto; font-size: 12px; line-height: 1.5; color: #1d2327;"><?php echo esc_html($log['response_body']); ?></pre>
+                                                    <?php else : ?>
+                                                        <div style="background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; color: #8c8f94; font-size: 13px;">-</div>
                                                     <?php endif; ?>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th style="text-align: left;"><?php echo esc_html__('Headers:', 'pexpress'); ?></th>
-                                            <td>
-                                                <?php
-                                                $headers = maybe_unserialize($log['headers']);
-                                                if (is_array($headers)) {
-                                                    echo '<pre style="background: #fff; padding: 10px; border: 1px solid #ddd; max-height: 150px; overflow: auto; font-size: 12px;">';
-                                                    print_r($headers);
-                                                    echo '</pre>';
-                                                } else {
-                                                    echo esc_html($log['headers']);
-                                                }
-                                                ?>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                                                <div>
+                                                    <strong style="display: block; color: #1d2327; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Message Preview', 'pexpress'); ?></strong>
+                                                    <div style="max-height: 200px; overflow: auto; background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; font-size: 13px; line-height: 1.6;">
+                                                        <?php echo wp_kses_post(substr($log['message'], 0, 500)); ?>
+                                                        <?php if (strlen($log['message']) > 500) : ?>
+                                                            <em style="color: #8c8f94;">... (truncated)</em>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <strong style="display: block; color: #1d2327; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html__('Headers', 'pexpress'); ?></strong>
+                                                    <?php
+                                                    $headers = maybe_unserialize($log['headers']);
+                                                    if (is_array($headers)) {
+                                                        echo '<pre style="background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; max-height: 150px; overflow: auto; font-size: 12px; line-height: 1.5; color: #1d2327;">';
+                                                        print_r($headers);
+                                                        echo '</pre>';
+                                                    } else {
+                                                        echo '<div style="background: #fff; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; color: #646970; font-size: 13px;">' . esc_html($log['headers']) . '</div>';
+                                                    }
+                                                    ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
 
             <?php if ($total_pages > 1) : ?>
                 <div class="tablenav">
@@ -554,15 +590,42 @@ class PExpress_Admin_Menus
             <?php endif; ?>
         </div>
 
+        <style>
+            .pexpress-email-log-wrap {
+                max-width: 100%;
+            }
+
+            .pexpress-email-log-wrap .button-small {
+                min-width: auto;
+            }
+
+            @media (max-width: 782px) {
+                .pexpress-email-log-stats {
+                    grid-template-columns: 1fr !important;
+                }
+
+                .pexpress-email-log-filters {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                }
+
+                .pexpress-email-log-filters form {
+                    flex-direction: column !important;
+                    min-width: auto !important;
+                }
+            }
+        </style>
         <script>
-        jQuery(document).ready(function($) {
-            $('.pexpress-view-log-details').on('click', function(e) {
-                e.preventDefault();
-                var logId = $(this).data('log-id');
-                $('#log-details-' + logId).toggle();
+            jQuery(document).ready(function($) {
+                $('.pexpress-view-log-details').on('click', function(e) {
+                    e.preventDefault();
+                    var logId = $(this).data('log-id');
+                    var $details = $('#log-details-' + logId);
+                    $details.slideToggle(200);
+                    $(this).find('.dashicons').toggleClass('dashicons-visibility dashicons-hidden');
+                });
             });
-        });
         </script>
-        <?php
+<?php
     }
 }
