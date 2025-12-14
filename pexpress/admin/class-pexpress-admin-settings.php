@@ -144,6 +144,53 @@ class PExpress_Admin_Settings
             )
         );
 
+        add_settings_field(
+            'pexpress_mailgun_enable',
+            __('Enable Mailgun', 'pexpress'),
+            array($this, 'render_checkbox_field'),
+            'polar-express-settings',
+            'pexpress_email_section',
+            array(
+                'label_for' => 'pexpress_mailgun_enable',
+                'option_key' => 'mailgun_config.enable_mailgun',
+                'description' => __('Enable Mailgun API for sending emails (recommended for better deliverability)', 'pexpress')
+            )
+        );
+
+        add_settings_field(
+            'pexpress_mailgun_api_key',
+            __('Mailgun API Key', 'pexpress'),
+            array($this, 'render_password_field'),
+            'polar-express-settings',
+            'pexpress_email_section',
+            array(
+                'label_for' => 'pexpress_mailgun_api_key',
+                'option_key' => 'mailgun_config.api_key',
+                'description' => __('Your Mailgun Private API key', 'pexpress')
+            )
+        );
+
+        add_settings_field(
+            'pexpress_mailgun_domain',
+            __('Mailgun Domain', 'pexpress'),
+            array($this, 'render_text_field'),
+            'polar-express-settings',
+            'pexpress_email_section',
+            array(
+                'label_for' => 'pexpress_mailgun_domain',
+                'option_key' => 'mailgun_config.domain',
+                'description' => __('Your Mailgun sending domain (e.g., mail.ethertech.ltd)', 'pexpress')
+            )
+        );
+
+        add_settings_field(
+            'pexpress_mailgun_region',
+            __('Mailgun Region', 'pexpress'),
+            array($this, 'render_mailgun_region_field'),
+            'polar-express-settings',
+            'pexpress_email_section'
+        );
+
         // Email Templates Section
         add_settings_section(
             'pexpress_email_templates_section',
@@ -616,11 +663,41 @@ class PExpress_Admin_Settings
     public function render_password_field($args)
     {
         $options = get_option('pexpress_options', array());
-        $value = isset($options[$args['option_key']]) ? esc_attr($options[$args['option_key']]) : '';
-        echo '<input type="password" id="' . esc_attr($args['label_for']) . '" name="pexpress_options[' . esc_attr($args['option_key']) . ']" value="' . $value . '" class="regular-text" />';
+
+        // Handle nested option keys (e.g., 'mailgun_config.api_key')
+        if (strpos($args['option_key'], '.') !== false) {
+            $keys = explode('.', $args['option_key']);
+            $value = $options;
+            foreach ($keys as $key) {
+                $value = isset($value[$key]) ? $value[$key] : '';
+            }
+            $value = esc_attr($value);
+            $name = 'pexpress_options[' . implode('][', $keys) . ']';
+        } else {
+            $value = isset($options[$args['option_key']]) ? esc_attr($options[$args['option_key']]) : '';
+            $name = 'pexpress_options[' . esc_attr($args['option_key']) . ']';
+        }
+
+        echo '<input type="password" id="' . esc_attr($args['label_for']) . '" name="' . $name . '" value="' . $value . '" class="regular-text" />';
         if (!empty($args['description'])) {
             echo '<p class="description">' . esc_html($args['description']) . '</p>';
         }
+    }
+
+    /**
+     * Render Mailgun region field
+     */
+    public function render_mailgun_region_field()
+    {
+        $options = get_option('pexpress_options', array());
+        $mailgun_config = isset($options['mailgun_config']) ? $options['mailgun_config'] : array();
+        $region = isset($mailgun_config['region']) ? $mailgun_config['region'] : 'us';
+
+        echo '<select id="pexpress_mailgun_region" name="pexpress_options[mailgun_config][region]">';
+        echo '<option value="us"' . selected('us', $region, false) . '>' . esc_html__('U.S./North America', 'pexpress') . '</option>';
+        echo '<option value="eu"' . selected('eu', $region, false) . '>' . esc_html__('Europe', 'pexpress') . '</option>';
+        echo '</select>';
+        echo '<p class="description">' . esc_html__('Choose the Mailgun region for your sending domain', 'pexpress') . '</p>';
     }
 
     /**

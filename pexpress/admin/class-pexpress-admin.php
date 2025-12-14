@@ -71,6 +71,7 @@ class PExpress_Admin
         add_action('admin_post_pexpress_remove_user_from_role', array($this->modules['roles'], 'handle_remove_user_from_role'));
         add_action('admin_notices', array($this->modules['roles'], 'show_role_assignment_notices'));
         add_action('wp_ajax_pexpress_get_users_for_role', array($this->modules['roles'], 'ajax_get_users_for_role'));
+        add_action('wp_ajax_pexpress_send_test_email', array($this, 'ajax_send_test_email'));
 
         // Filter admin page title to show correct title
         add_filter('admin_title', array($this, 'filter_admin_page_title'), 10, 2);
@@ -258,5 +259,116 @@ class PExpress_Admin
                 'heartbeatInterval' => get_option('pexpress_options')['heartbeat_interval'] ?? 15
             )
         );
+    }
+
+    /**
+     * AJAX handler: Send test email
+     */
+    public function ajax_send_test_email()
+    {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'pexpress_test_mail_ajax')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'pexpress')));
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => __('You do not have permission to send test emails.', 'pexpress')));
+        }
+
+        // Get form data
+        $to = isset($_POST['to']) ? sanitize_email($_POST['to']) : '';
+        $subject = isset($_POST['subject']) ? sanitize_text_field($_POST['subject']) : '';
+        $message = isset($_POST['message']) ? wp_kses_post($_POST['message']) : '';
+
+        // Validate inputs
+        if (empty($to) || !is_email($to)) {
+            wp_send_json_error(array('message' => __('Please enter a valid email address.', 'pexpress')));
+        }
+
+        if (empty($subject)) {
+            wp_send_json_error(array('message' => __('Please enter an email subject.', 'pexpress')));
+        }
+
+        if (empty($message)) {
+            wp_send_json_error(array('message' => __('Please enter an email message.', 'pexpress')));
+        }
+
+        // Check if email is enabled
+        $options = get_option('pexpress_options', array());
+        $email_config = isset($options['email_config']) ? $options['email_config'] : array();
+
+        if (empty($email_config['enable_email'])) {
+            wp_send_json_error(array(
+                'message' => __('Email notifications are disabled. Please enable them in Settings → Email Configuration.', 'pexpress')
+            ));
+        }
+
+        // Replace placeholders in message
+        $mailgun_config = isset($options['mailgun_config']) ? $options['mailgun_config'] : array();
+        $use_mailgun = !empty($mailgun_config['enable_mailgun']) && class_exists('PExpress_Mailgun');
+
+        $method = $use_mailgun ? 'Mailgun' : 'wp_mail';
+        $message = str_replace('{{method}}', $method, $message);
+        $message = str_replace('{{time}}', current_time('mysql'), $message);
+        $message = str_replace('{{site}}', get_bloginfo('name'), $message);
+
+        // Convert to HTML
+        $html_message = '<html><body>';
+        $html_message .= '<p>' . nl2br(esc_html($message)) . '</p>';
+        $html_message .= '</body></html>';
+
+        // Send email using PExpress_Email class
+        if (!class_exists('PExpress_Email')) {
+            wp_send_json_error(array('message' => __('Email class not found. Please ensure the plugin is properly installed.', 'pexpress')));
+        }
+
+        // Send the email
+        $result = PExpress_Email::send_email($to, $subject, $html_message);
+
+        // Handle result
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+            $error_message = $result->get_error_message();
+            $error_data = $result->get_error_data();
+
+            // Build detailed error message
+            $detailed_message = $error_message;
+
+            // Add more context based on error code
+            if ($error_code === 'email_disabled') {
+                $detailed_message = __('Email notifications are disabled. Please enable them in Settings → Email Configuration.', 'pexpress');
+            } elseif ($error_code === 'invalid_email') {
+                $detailed_message = __('Invalid email address. Please check the recipient email.', 'pexpress');
+            } elseif ($error_code === 'mailgun_not_configured') {
+                $detailed_message = __('Mailgun is enabled but not properly configured. Please check your Mailgun API key and domain in Settings.', 'pexpress');
+            } elseif ($error_code === 'mailgun_api_error' && isset($error_data['response_code'])) {
+                $detailed_message = sprintf(
+                    __('Mailgun API error (Code: %d). %s', 'pexpress'),
+                    $error_data['response_code'],
+                    $error_message
+                );
+            } elseif ($error_code === 'email_send_failed') {
+                $detailed_message = __('Failed to send email. This could be due to server configuration issues. Check your WordPress mail settings or use Mailgun for better deliverability.', 'pexpress');
+            }
+
+            wp_send_json_error(array('message' => $detailed_message));
+        }
+
+        // Check if result is false (wp_mail can return false without WP_Error)
+        if ($result === false) {
+            wp_send_json_error(array(
+                'message' => __('Email sending failed. wp_mail returned false. This is usually a server configuration issue. Consider using Mailgun for better deliverability.', 'pexpress')
+            ));
+        }
+
+        // Success
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Test email sent successfully to %s using %s method.', 'pexpress'),
+                esc_html($to),
+                esc_html($method)
+            )
+        ));
     }
 }

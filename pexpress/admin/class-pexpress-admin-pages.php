@@ -393,6 +393,230 @@ class PExpress_Admin_Pages
     }
 
     /**
+     * Render Test Mail page
+     */
+    public function render_test_mail_page()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(__('You do not have permission to access this page.', 'pexpress'));
+        }
+
+        // Get current email configuration
+        $options = get_option('pexpress_options', array());
+        $email_config = isset($options['email_config']) ? $options['email_config'] : array();
+        $mailgun_config = isset($options['mailgun_config']) ? $options['mailgun_config'] : array();
+
+        $email_enabled = !empty($email_config['enable_email']);
+        $mailgun_enabled = !empty($mailgun_config['enable_mailgun']);
+        $from_name = isset($email_config['from_name']) ? $email_config['from_name'] : get_bloginfo('name');
+        $from_email = isset($email_config['from_email']) ? $email_config['from_email'] : get_option('admin_email');
+        $mailgun_configured = !empty($mailgun_config['api_key']) && !empty($mailgun_config['domain']);
+
+        $this->render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured);
+    }
+
+    /**
+     * Render Test Mail HTML
+     */
+    private function render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured)
+    {
+        ?>
+        <div class="wrap pexpress-test-mail">
+            <h1><?php esc_html_e('Test Mail', 'pexpress'); ?></h1>
+            <p><?php esc_html_e('Send a test email to verify your email configuration is working correctly.', 'pexpress'); ?></p>
+
+            <div class="pexpress-test-mail-status" style="margin: 20px 0; padding: 15px; background: #fff; border-left: 4px solid #2271b1;">
+                <h3 style="margin-top: 0;"><?php esc_html_e('Email Configuration Status', 'pexpress'); ?></h3>
+                <table class="form-table">
+                    <tr>
+                        <th><?php esc_html_e('Email Notifications:', 'pexpress'); ?></th>
+                        <td>
+                            <?php if ($email_enabled) : ?>
+                                <span style="color: #46b450;">✓ <?php esc_html_e('Enabled', 'pexpress'); ?></span>
+                            <?php else : ?>
+                                <span style="color: #dc3232;">✗ <?php esc_html_e('Disabled', 'pexpress'); ?></span>
+                                <p class="description"><?php esc_html_e('Enable email notifications in Settings → Email Configuration', 'pexpress'); ?></p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e('From Name:', 'pexpress'); ?></th>
+                        <td><?php echo esc_html($from_name); ?></td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e('From Email:', 'pexpress'); ?></th>
+                        <td><?php echo esc_html($from_email); ?></td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e('Mailgun:', 'pexpress'); ?></th>
+                        <td>
+                            <?php if ($mailgun_enabled && $mailgun_configured) : ?>
+                                <span style="color: #46b450;">✓ <?php esc_html_e('Enabled & Configured', 'pexpress'); ?></span>
+                            <?php elseif ($mailgun_enabled && !$mailgun_configured) : ?>
+                                <span style="color: #dc3232;">✗ <?php esc_html_e('Enabled but not configured', 'pexpress'); ?></span>
+                                <p class="description"><?php esc_html_e('Configure Mailgun API key and domain in Settings', 'pexpress'); ?></p>
+                            <?php else : ?>
+                                <span style="color: #646970;">— <?php esc_html_e('Disabled (using wp_mail)', 'pexpress'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="pexpress-test-mail-form" style="background: #fff; padding: 20px; margin: 20px 0; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+                <h2><?php esc_html_e('Send Test Email', 'pexpress'); ?></h2>
+                <form id="pexpress-test-mail-form">
+                    <?php wp_nonce_field('pexpress_test_mail', 'pexpress_test_mail_nonce'); ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="test_email_to"><?php esc_html_e('Recipient Email', 'pexpress'); ?></label>
+                            </th>
+                            <td>
+                                <input type="email" id="test_email_to" name="test_email_to" value="<?php echo esc_attr(get_option('admin_email')); ?>" class="regular-text" required />
+                                <p class="description"><?php esc_html_e('Enter the email address where you want to receive the test email', 'pexpress'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="test_email_subject"><?php esc_html_e('Subject', 'pexpress'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="test_email_subject" name="test_email_subject" value="<?php echo esc_attr(sprintf(__('Test Email from %s', 'pexpress'), get_bloginfo('name'))); ?>" class="regular-text" required />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="test_email_message"><?php esc_html_e('Message', 'pexpress'); ?></label>
+                            </th>
+                            <td>
+                                <textarea id="test_email_message" name="test_email_message" rows="10" class="large-text" required><?php echo esc_textarea(__('This is a test email from Polar Express plugin.
+
+If you received this email, your email configuration is working correctly!
+
+Email Method: {{method}}
+Sent At: {{time}}
+Site: {{site}}', 'pexpress')); ?></textarea>
+                                <p class="description"><?php esc_html_e('You can customize the test message. Placeholders: {{method}}, {{time}}, {{site}}', 'pexpress'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" class="button button-primary" id="pexpress-send-test-email">
+                            <span class="dashicons dashicons-email-alt" style="vertical-align: middle; margin-right: 5px;"></span>
+                            <?php esc_html_e('Send Test Email', 'pexpress'); ?>
+                        </button>
+                    </p>
+                </form>
+
+                <div id="pexpress-test-mail-result" style="display: none; margin-top: 20px; padding: 15px; border-radius: 4px;"></div>
+            </div>
+
+            <div class="pexpress-test-mail-info" style="background: #f6f7f7; padding: 15px; margin: 20px 0; border-left: 4px solid #2271b1;">
+                <h3 style="margin-top: 0;"><?php esc_html_e('Tips', 'pexpress'); ?></h3>
+                <ul>
+                    <li><?php esc_html_e('Check your spam folder if you don\'t receive the email', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('Verify your email configuration in Settings → Email Configuration', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('If using Mailgun, ensure your domain is verified', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('Check the Email Log page to see detailed sending information', 'pexpress'); ?></li>
+                </ul>
+                <p>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-settings')); ?>" class="button">
+                        <?php esc_html_e('Go to Email Settings →', 'pexpress'); ?>
+                    </a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-email-log')); ?>" class="button">
+                        <?php esc_html_e('View Email Log →', 'pexpress'); ?>
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <style>
+            .pexpress-test-mail .form-table th {
+                width: 200px;
+            }
+            #pexpress-test-mail-result.success {
+                background: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+            }
+            #pexpress-test-mail-result.error {
+                background: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+            }
+            #pexpress-test-mail-result.info {
+                background: #d1ecf1;
+                border: 1px solid #bee5eb;
+                color: #0c5460;
+            }
+            #pexpress-send-test-email:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        </style>
+
+        <script>
+        jQuery(document).ready(function($) {
+            $('#pexpress-test-mail-form').on('submit', function(e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $button = $('#pexpress-send-test-email');
+                var $result = $('#pexpress-test-mail-result');
+                var originalText = $button.html();
+
+                // Disable button and show loading
+                $button.prop('disabled', true);
+                $button.html('<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span> <?php echo esc_js(__('Sending...', 'pexpress')); ?>');
+                $result.hide();
+
+                // Get form data
+                var formData = {
+                    action: 'pexpress_send_test_email',
+                    nonce: '<?php echo wp_create_nonce('pexpress_test_mail_ajax'); ?>',
+                    to: $('#test_email_to').val(),
+                    subject: $('#test_email_subject').val(),
+                    message: $('#test_email_message').val()
+                };
+
+                // Send AJAX request
+                $.ajax({
+                    url: (typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof polarExpress !== 'undefined' ? polarExpress.ajaxUrl : '<?php echo admin_url('admin-ajax.php'); ?>')),
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        $button.prop('disabled', false);
+                        $button.html(originalText);
+
+                        if (response.success) {
+                            $result.removeClass('error info').addClass('success').html(
+                                '<strong><?php echo esc_js(__('Success!', 'pexpress')); ?></strong> ' + 
+                                response.data.message
+                            ).show();
+                        } else {
+                            $result.removeClass('success info').addClass('error').html(
+                                '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' + 
+                                (response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Unknown error occurred', 'pexpress')); ?>')
+                            ).show();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $button.prop('disabled', false);
+                        $button.html(originalText);
+                        $result.removeClass('success info').addClass('error').html(
+                            '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' + 
+                            '<?php echo esc_js(__('Failed to send request. Please try again.', 'pexpress')); ?>'
+                        ).show();
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
      * Render Changelog HTML
      */
     private function render_changelog_html($changelog)

@@ -52,8 +52,78 @@ class PExpress_Email
 
         $headers = array_merge($default_headers, $headers);
 
-        // Send email
+        // Check if Mailgun is enabled and configured
+        $mailgun_config = isset($options['mailgun_config']) ? $options['mailgun_config'] : array();
+        $use_mailgun = !empty($mailgun_config['enable_mailgun']) && class_exists('PExpress_Mailgun');
+
+        // Log email attempt
+        $log_id = null;
+        if (class_exists('PExpress_Email_Log')) {
+            $method = $use_mailgun ? 'mailgun' : 'wp_mail';
+            $log_id = PExpress_Email_Log::log($to, $subject, $message, $headers, $method, 'pending');
+        }
+
+        if ($use_mailgun) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('PExpress: Attempting to send email via Mailgun');
+            }
+            
+            // Use Mailgun API
+            $result = PExpress_Mailgun::send_email($to, $subject, $message, $headers);
+
+            // Update log with result
+            if ($log_id && class_exists('PExpress_Email_Log')) {
+                if (is_wp_error($result)) {
+                    $error_data = $result->get_error_data();
+                    $response_code = isset($error_data['response_code']) ? $error_data['response_code'] : null;
+                    $response_body = isset($error_data['response_body']) ? $error_data['response_body'] : '';
+                    PExpress_Email_Log::update_log($log_id, 'failed', $result->get_error_message(), $response_code, $response_body);
+                } else {
+                    PExpress_Email_Log::update_log($log_id, 'success', '', 200);
+                }
+            }
+
+            // If Mailgun fails, fallback to wp_mail
+            if (is_wp_error($result)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('PExpress Mailgun Error: ' . $result->get_error_message());
+                    error_log('PExpress: Falling back to wp_mail');
+                }
+                // Fallback to default wp_mail
+                $result = wp_mail($to, $subject, $message, $headers);
+                if (!$result) {
+                    if ($log_id && class_exists('PExpress_Email_Log')) {
+                        PExpress_Email_Log::update_log($log_id, 'failed', __('wp_mail fallback also failed.', 'pexpress'));
+                    }
+                    return new WP_Error('email_send_failed', __('Failed to send email.', 'pexpress'));
+                }
+                if ($log_id && class_exists('PExpress_Email_Log')) {
+                    PExpress_Email_Log::update_log($log_id, 'success', '', null, '', 'wp_mail');
+                }
+                return true;
+            }
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('PExpress: Email sent successfully via Mailgun');
+            }
+            return $result;
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('PExpress: Mailgun not enabled or class not found. Using wp_mail. Mailgun enabled: ' . (empty($mailgun_config['enable_mailgun']) ? 'no' : 'yes') . ', Class exists: ' . (class_exists('PExpress_Mailgun') ? 'yes' : 'no'));
+            }
+        }
+
+        // Send email using default WordPress mail
         $result = wp_mail($to, $subject, $message, $headers);
+
+        // Update log with result
+        if ($log_id && class_exists('PExpress_Email_Log')) {
+            if (!$result) {
+                PExpress_Email_Log::update_log($log_id, 'failed', __('wp_mail returned false.', 'pexpress'));
+            } else {
+                PExpress_Email_Log::update_log($log_id, 'success');
+            }
+        }
 
         if (!$result) {
             return new WP_Error('email_send_failed', __('Failed to send email.', 'pexpress'));

@@ -123,6 +123,8 @@ class PExpress
         require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-core.php';
         require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-order-statuses.php';
         require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-sms-api.php';
+        require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-mailgun.php';
+        require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-email-log.php';
         require_once PEXPRESS_PLUGIN_DIR . 'includes/class-pexpress-email.php';
 
         // Load module files
@@ -829,6 +831,11 @@ class PExpress
 
         // Create custom roles
         polar_create_roles();
+
+        // Create email log table
+        if (class_exists('PExpress_Email_Log')) {
+            PExpress_Email_Log::create_table();
+        }
 
         // Run data migration for per-role statuses
         self::migrate_to_per_role_statuses();
