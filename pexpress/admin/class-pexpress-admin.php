@@ -72,6 +72,7 @@ class PExpress_Admin
         add_action('admin_notices', array($this->modules['roles'], 'show_role_assignment_notices'));
         add_action('wp_ajax_pexpress_get_users_for_role', array($this->modules['roles'], 'ajax_get_users_for_role'));
         add_action('wp_ajax_pexpress_send_test_email', array($this, 'ajax_send_test_email'));
+        add_action('wp_ajax_pexpress_send_test_sms', array($this, 'ajax_send_test_sms'));
 
         // Filter admin page title to show correct title
         add_filter('admin_title', array($this, 'filter_admin_page_title'), 10, 2);
@@ -368,6 +369,116 @@ class PExpress_Admin
                 __('Test email sent successfully to %s using %s method.', 'pexpress'),
                 esc_html($to),
                 esc_html($method)
+            )
+        ));
+    }
+
+    /**
+     * AJAX handler: Send test SMS
+     */
+    public function ajax_send_test_sms()
+    {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'pexpress_test_sms_ajax')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'pexpress')));
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => __('You do not have permission to send test SMS.', 'pexpress')));
+        }
+
+        // Get form data
+        $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
+        $message = isset($_POST['message']) ? sanitize_textarea_field($_POST['message']) : '';
+
+        // Validate inputs
+        if (empty($phone)) {
+            wp_send_json_error(array('message' => __('Please enter a phone number.', 'pexpress')));
+        }
+
+        if (empty($message)) {
+            wp_send_json_error(array('message' => __('Please enter an SMS message.', 'pexpress')));
+        }
+
+        // Check if SMS is enabled
+        $options = get_option('pexpress_options', array());
+        $sms_config = isset($options['sms_config']) ? $options['sms_config'] : array();
+
+        if (empty($sms_config['enable_plugin'])) {
+            wp_send_json_error(array(
+                'message' => __('SMS notifications are disabled. Please enable them in Settings → SMS Configuration.', 'pexpress')
+            ));
+        }
+
+        // Check API configuration
+        $api_token = isset($sms_config['api_hash_token']) ? $sms_config['api_hash_token'] : '';
+        $api_sid = isset($sms_config['api_sid']) ? $sms_config['api_sid'] : '';
+
+        if (empty($api_token)) {
+            wp_send_json_error(array(
+                'message' => __('SMS API Token is not configured. Please set it in Settings → SMS Configuration.', 'pexpress')
+            ));
+        }
+
+        if (empty($api_sid)) {
+            wp_send_json_error(array(
+                'message' => __('SMS SID/Stakeholder is not configured. Please set it in Settings → SMS Configuration.', 'pexpress')
+            ));
+        }
+
+        // Replace placeholders in message
+        $message = str_replace('{{time}}', current_time('mysql'), $message);
+        $message = str_replace('{{site}}', get_bloginfo('name'), $message);
+
+        // Send SMS
+        if (!function_exists('polar_send_sms')) {
+            wp_send_json_error(array('message' => __('SMS function not found. Please ensure the plugin is properly installed.', 'pexpress')));
+        }
+
+        $result = polar_send_sms($phone, $message);
+
+        // Handle result
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+            $error_message = $result->get_error_message();
+            $error_data = $result->get_error_data();
+
+            // Build detailed error message
+            $detailed_message = $error_message;
+
+            // Add more context based on error code
+            if ($error_code === 'sms_disabled') {
+                $detailed_message = __('SMS notifications are disabled. Please enable them in Settings → SMS Configuration.', 'pexpress');
+            } elseif ($error_code === 'invalid_phone') {
+                $detailed_message = __('Invalid phone number. Please check the phone number format.', 'pexpress');
+            } elseif ($error_code === 'sms_config_error') {
+                $detailed_message = __('SMS API configuration error. Please check your API Token and SID in Settings.', 'pexpress');
+            } elseif ($error_code === 'sms_send_failed') {
+                $detailed_message = __('Failed to send SMS. Please check your SMS API credentials and try again.', 'pexpress');
+                if (is_array($error_data) && isset($error_data[1])) {
+                    $body = json_decode($error_data[1], true);
+                    if (is_array($body) && isset($body['message'])) {
+                        $detailed_message .= ' API Response: ' . $body['message'];
+                    }
+                }
+            }
+
+            wp_send_json_error(array('message' => $detailed_message));
+        }
+
+        // Check if result is false
+        if ($result === false) {
+            wp_send_json_error(array(
+                'message' => __('SMS sending failed. Please check your SMS configuration and try again.', 'pexpress')
+            ));
+        }
+
+        // Success
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Test SMS sent successfully to %s.', 'pexpress'),
+                esc_html($phone)
             )
         ));
     }

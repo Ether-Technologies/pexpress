@@ -93,6 +93,10 @@ foreach ($assigned_orders as $order) {
     $order_id = $order->get_id();
     // Use per-role status instead of WC status
     $role_status = PExpress_Core::get_role_status($order_id, 'distributor');
+    // Default to 'pending' if role_status is empty or invalid
+    if (empty($role_status) || !is_string($role_status)) {
+        $role_status = 'pending';
+    }
 
     if ($role_status === 'handoff_complete') {
         $distributor_groups['completed'][] = $order;
@@ -175,6 +179,10 @@ $completed_total = count($completed_tasks);
                 $order_id            = $order->get_id();
                 // Get per-role status
                 $role_status = PExpress_Core::get_role_status($order_id, 'distributor');
+                // Default to 'pending' if role_status is empty or invalid
+                if (empty($role_status) || !is_string($role_status)) {
+                    $role_status = 'pending';
+                }
                 $order_status        = $order->get_status();
                 // Map role status to display label
                 $status_labels = array(

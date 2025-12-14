@@ -411,6 +411,7 @@ class PExpress_Admin_Settings_Templates
 
         echo '<div class="pexpress-form-field-wrapper">';
         echo '<label for="pexpress_email_' . esc_attr($template_key) . '_template" style="display: block; font-weight: 600; color: #1d2327; margin-bottom: 8px; font-size: 14px;">' . esc_html__('Email Template', 'pexpress') . '</label>';
+        // Output raw HTML for email templates (already sanitized with wp_kses_post on save)
         echo '<textarea id="pexpress_email_' . esc_attr($template_key) . '_template" name="pexpress_options[email_templates][' . esc_attr($template_key) . '][template]" rows="15" style="width: 100%; padding: 16px; border: 2px solid #dcdcde; border-radius: 8px; font-size: 13px; font-family: \'Monaco\', \'Menlo\', \'Ubuntu Mono\', \'Consolas\', monospace; line-height: 1.6; transition: all 0.2s ease; background: #fff; color: #1d2327; box-sizing: border-box; resize: vertical;">' . esc_textarea($template) . '</textarea>';
         echo '<p class="description" style="margin-top: 8px; color: #646970; font-size: 13px; line-height: 1.5;">' . esc_html__('HTML templates are supported. Use placeholders like {{order_id}}, {{customer_name}}, {{order_items}}, etc. See the section above for all available placeholders.', 'pexpress') . '</p>';
         echo '</div>';

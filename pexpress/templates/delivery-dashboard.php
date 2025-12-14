@@ -87,6 +87,10 @@ foreach ($assigned_orders as $order) {
     $order_id = $order->get_id();
     // Use per-role status instead of WC status
     $role_status = PExpress_Core::get_role_status($order_id, 'delivery');
+    // Default to 'pending' if role_status is empty or invalid
+    if (empty($role_status) || !is_string($role_status)) {
+        $role_status = 'pending';
+    }
 
     if (in_array($role_status, array('service_complete', 'customer_served'), true)) {
         $delivery_groups['completed'][] = $order;
@@ -139,6 +143,10 @@ if (!function_exists('pexpress_render_delivery_task_card')) {
         $order_id = $order->get_id();
         // Get per-role status
         $role_status = PExpress_Core::get_role_status($order_id, 'delivery');
+        // Default to 'pending' if role_status is empty or invalid
+        if (empty($role_status) || !is_string($role_status)) {
+            $role_status = 'pending';
+        }
         $order_status = $order->get_status();
         // Map role status to display label
         $status_labels = array(

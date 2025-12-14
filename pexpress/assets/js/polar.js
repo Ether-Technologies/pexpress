@@ -176,11 +176,43 @@
                 data: formData,
                 success: function (response) {
                     if (response.success) {
-                        showNotice('Order status updated successfully!', 'success');
-                        // Reload page to show updated status
+                        var message = 'Order status updated successfully!';
+                        if (response.data && response.data.new_status) {
+                            message = 'Status updated to: ' + response.data.new_status;
+                        }
+                        showNotice(message, 'success');
+                        
+                        // Determine which tab the order should appear in after status update
+                        var $taskItem = $form.closest('.polar-task-item');
+                        var newStatus = $button.val();
+                        var targetTab = 'pending';
+                        
+                        // Map status to target tab based on role
+                        if ($form.hasClass('polar-fridge-status-form')) {
+                            if (newStatus === 'fridge_returned') {
+                                targetTab = 'completed';
+                            } else if (newStatus === 'fridge_drop' || newStatus === 'fridge_collected') {
+                                targetTab = 'in-progress';
+                            }
+                        } else if ($form.hasClass('polar-distributor-status-form')) {
+                            if (newStatus === 'handoff_complete') {
+                                targetTab = 'completed';
+                            } else if (newStatus === 'distributor_prep' || newStatus === 'out_for_delivery') {
+                                targetTab = 'in-progress';
+                            }
+                        } else if ($form.hasClass('polar-status-update-form')) {
+                            if (newStatus === 'service_complete' || newStatus === 'customer_served') {
+                                targetTab = 'completed';
+                            } else if (newStatus === 'meet_point_arrived' || newStatus === 'delivery_location_arrived' || newStatus === 'service_in_progress') {
+                                targetTab = 'in-progress';
+                            }
+                        }
+                        
+                        // Reload page with cache-bust and preserve target tab
                         setTimeout(function () {
-                            location.reload();
-                        }, 1000);
+                            var baseUrl = location.href.split('?')[0].split('#')[0];
+                            location.href = baseUrl + '?t=' + Date.now() + '#tab-' + targetTab;
+                        }, 800);
                     } else {
                         showNotice(response.data.message || 'Failed to update status.', 'error');
                         if ($button && $button.length) {
@@ -204,6 +236,24 @@
      * Initialize tabs functionality
      */
     function initTabs() {
+        // Check for hash on page load to restore active tab
+        if (location.hash && location.hash.startsWith('#tab-')) {
+            var tabId = location.hash.replace('#tab-', '');
+            var $tab = $('.polar-tab[data-tab="' + tabId + '"]');
+            if ($tab.length) {
+                var $tabs = $tab.closest('.polar-tabs').find('.polar-tab');
+                var $contents = $tab.closest('.polar-tasks-section, .polar-orders-section').find('.polar-tab-content');
+                
+                // Remove active class from all tabs and contents
+                $tabs.removeClass('active');
+                $contents.removeClass('active');
+                
+                // Add active class to target tab and corresponding content
+                $tab.addClass('active');
+                $('#tab-' + tabId).addClass('active');
+            }
+        }
+        
         $('.polar-tab').on('click', function () {
             var $tab = $(this);
             var tabId = $tab.data('tab');
@@ -217,6 +267,13 @@
             // Add active class to clicked tab and corresponding content
             $tab.addClass('active');
             $('#tab-' + tabId).addClass('active');
+            
+            // Update URL hash without triggering scroll
+            if (history.replaceState) {
+                history.replaceState(null, null, '#tab-' + tabId);
+            } else {
+                location.hash = '#tab-' + tabId;
+            }
         });
     }
 

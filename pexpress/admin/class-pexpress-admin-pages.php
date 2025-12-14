@@ -412,18 +412,25 @@ class PExpress_Admin_Pages
         $from_email = isset($email_config['from_email']) ? $email_config['from_email'] : get_option('admin_email');
         $mailgun_configured = !empty($mailgun_config['api_key']) && !empty($mailgun_config['domain']);
 
-        $this->render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured);
+        // SMS config
+        $sms_config = isset($options['sms_config']) ? $options['sms_config'] : array();
+        $sms_enabled = !empty($sms_config['enable_plugin']);
+        $sms_api_token = isset($sms_config['api_hash_token']) ? $sms_config['api_hash_token'] : '';
+        $sms_api_sid = isset($sms_config['api_sid']) ? $sms_config['api_sid'] : '';
+        $sms_configured = !empty($sms_api_token) && !empty($sms_api_sid);
+
+        $this->render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured, $sms_enabled, $sms_configured, $sms_api_sid);
     }
 
     /**
      * Render Test Mail HTML
      */
-    private function render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured)
+    private function render_test_mail_html($email_enabled, $mailgun_enabled, $from_name, $from_email, $mailgun_configured, $sms_enabled = false, $sms_configured = false, $sms_api_sid = '')
     {
-        ?>
+    ?>
         <div class="wrap pexpress-test-mail">
-            <h1><?php esc_html_e('Test Mail', 'pexpress'); ?></h1>
-            <p><?php esc_html_e('Send a test email to verify your email configuration is working correctly.', 'pexpress'); ?></p>
+            <h1><?php esc_html_e('Test Email & SMS', 'pexpress'); ?></h1>
+            <p><?php esc_html_e('Send a test email or SMS to verify your configuration is working correctly.', 'pexpress'); ?></p>
 
             <div class="pexpress-test-mail-status" style="margin: 20px 0; padding: 15px; background: #fff; border-left: 4px solid #2271b1;">
                 <h3 style="margin-top: 0;"><?php esc_html_e('Email Configuration Status', 'pexpress'); ?></h3>
@@ -513,7 +520,7 @@ Site: {{site}}', 'pexpress')); ?></textarea>
             </div>
 
             <div class="pexpress-test-mail-info" style="background: #f6f7f7; padding: 15px; margin: 20px 0; border-left: 4px solid #2271b1;">
-                <h3 style="margin-top: 0;"><?php esc_html_e('Tips', 'pexpress'); ?></h3>
+                <h3 style="margin-top: 0;"><?php esc_html_e('Email Tips', 'pexpress'); ?></h3>
                 <ul>
                     <li><?php esc_html_e('Check your spam folder if you don\'t receive the email', 'pexpress'); ?></li>
                     <li><?php esc_html_e('Verify your email configuration in Settings → Email Configuration', 'pexpress'); ?></li>
@@ -521,11 +528,105 @@ Site: {{site}}', 'pexpress')); ?></textarea>
                     <li><?php esc_html_e('Check the Email Log page to see detailed sending information', 'pexpress'); ?></li>
                 </ul>
                 <p>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-settings')); ?>" class="button">
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-settings&tab=email')); ?>" class="button">
                         <?php esc_html_e('Go to Email Settings →', 'pexpress'); ?>
                     </a>
                     <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-email-log')); ?>" class="button">
                         <?php esc_html_e('View Email Log →', 'pexpress'); ?>
+                    </a>
+                </p>
+            </div>
+
+            <!-- SMS Testing Section -->
+            <hr style="margin: 40px 0; border: none; border-top: 2px solid #ccd0d4;" />
+
+            <div class="pexpress-test-sms-status" style="margin: 20px 0; padding: 15px; background: #fff; border-left: 4px solid #00a32a;">
+                <h3 style="margin-top: 0;"><?php esc_html_e('SMS Configuration Status', 'pexpress'); ?></h3>
+                <table class="form-table">
+                    <tr>
+                        <th><?php esc_html_e('SMS Notifications:', 'pexpress'); ?></th>
+                        <td>
+                            <?php if ($sms_enabled) : ?>
+                                <span style="color: #46b450;">✓ <?php esc_html_e('Enabled', 'pexpress'); ?></span>
+                            <?php else : ?>
+                                <span style="color: #dc3232;">✗ <?php esc_html_e('Disabled', 'pexpress'); ?></span>
+                                <p class="description"><?php esc_html_e('Enable SMS notifications in Settings → SMS Configuration', 'pexpress'); ?></p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e('API Token:', 'pexpress'); ?></th>
+                        <td>
+                            <?php if ($sms_configured) : ?>
+                                <span style="color: #46b450;">✓ <?php esc_html_e('Configured', 'pexpress'); ?></span>
+                            <?php else : ?>
+                                <span style="color: #dc3232;">✗ <?php esc_html_e('Not configured', 'pexpress'); ?></span>
+                                <p class="description"><?php esc_html_e('Set your API Token in Settings → SMS Configuration', 'pexpress'); ?></p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e('SID/Stakeholder:', 'pexpress'); ?></th>
+                        <td>
+                            <?php if (!empty($sms_api_sid)) : ?>
+                                <?php echo esc_html($sms_api_sid); ?>
+                            <?php else : ?>
+                                <span style="color: #dc3232;">✗ <?php esc_html_e('Not set', 'pexpress'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="pexpress-test-sms-form" style="background: #fff; padding: 20px; margin: 20px 0; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+                <h2><?php esc_html_e('Send Test SMS', 'pexpress'); ?></h2>
+                <form id="pexpress-test-sms-form">
+                    <?php wp_nonce_field('pexpress_test_sms', 'pexpress_test_sms_nonce'); ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="test_sms_phone"><?php esc_html_e('Phone Number', 'pexpress'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="test_sms_phone" name="test_sms_phone" value="" placeholder="01XXXXXXXXX" class="regular-text" required />
+                                <p class="description"><?php esc_html_e('Enter the phone number where you want to receive the test SMS (Bangladesh format: 01XXXXXXXXX)', 'pexpress'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="test_sms_message"><?php esc_html_e('Message', 'pexpress'); ?></label>
+                            </th>
+                            <td>
+                                <textarea id="test_sms_message" name="test_sms_message" rows="4" class="large-text" required><?php echo esc_textarea(__('This is a test SMS from Polar Express plugin. If you received this, your SMS configuration is working! Sent at: {{time}}', 'pexpress')); ?></textarea>
+                                <p class="description"><?php esc_html_e('You can customize the test message. Placeholders: {{time}}, {{site}}', 'pexpress'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" class="button button-primary" id="pexpress-send-test-sms" style="background: #00a32a; border-color: #00a32a;">
+                            <span class="dashicons dashicons-smartphone" style="vertical-align: middle; margin-right: 5px;"></span>
+                            <?php esc_html_e('Send Test SMS', 'pexpress'); ?>
+                        </button>
+                    </p>
+                </form>
+
+                <div id="pexpress-test-sms-result" style="display: none; margin-top: 20px; padding: 15px; border-radius: 4px;"></div>
+            </div>
+
+            <div class="pexpress-test-sms-info" style="background: #f6f7f7; padding: 15px; margin: 20px 0; border-left: 4px solid #00a32a;">
+                <h3 style="margin-top: 0;"><?php esc_html_e('SMS Tips', 'pexpress'); ?></h3>
+                <ul>
+                    <li><?php esc_html_e('Make sure your API Token and SID are correctly configured', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('Phone number should be in Bangladesh format (01XXXXXXXXX)', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('Check that your SMS account has sufficient balance', 'pexpress'); ?></li>
+                    <li><?php esc_html_e('Enable WP_DEBUG to see detailed SMS logs in debug.log', 'pexpress'); ?></li>
+                </ul>
+                <p>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-settings&tab=sms')); ?>" class="button">
+                        <?php esc_html_e('Go to SMS Settings →', 'pexpress'); ?>
+                    </a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express-settings&tab=templates')); ?>" class="button">
+                        <?php esc_html_e('SMS Templates →', 'pexpress'); ?>
                     </a>
                 </p>
             </div>
@@ -535,85 +636,162 @@ Site: {{site}}', 'pexpress')); ?></textarea>
             .pexpress-test-mail .form-table th {
                 width: 200px;
             }
+
             #pexpress-test-mail-result.success {
                 background: #d4edda;
                 border: 1px solid #c3e6cb;
                 color: #155724;
             }
+
             #pexpress-test-mail-result.error {
                 background: #f8d7da;
                 border: 1px solid #f5c6cb;
                 color: #721c24;
             }
+
             #pexpress-test-mail-result.info {
                 background: #d1ecf1;
                 border: 1px solid #bee5eb;
                 color: #0c5460;
             }
-            #pexpress-send-test-email:disabled {
+
+            #pexpress-send-test-email:disabled,
+            #pexpress-send-test-sms:disabled {
                 opacity: 0.6;
                 cursor: not-allowed;
+            }
+
+            #pexpress-test-sms-result.success {
+                background: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+            }
+
+            #pexpress-test-sms-result.error {
+                background: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+            }
+
+            #pexpress-test-sms-result.info {
+                background: #d1ecf1;
+                border: 1px solid #bee5eb;
+                color: #0c5460;
             }
         </style>
 
         <script>
-        jQuery(document).ready(function($) {
-            $('#pexpress-test-mail-form').on('submit', function(e) {
-                e.preventDefault();
+            jQuery(document).ready(function($) {
+                $('#pexpress-test-mail-form').on('submit', function(e) {
+                    e.preventDefault();
 
-                var $form = $(this);
-                var $button = $('#pexpress-send-test-email');
-                var $result = $('#pexpress-test-mail-result');
-                var originalText = $button.html();
+                    var $form = $(this);
+                    var $button = $('#pexpress-send-test-email');
+                    var $result = $('#pexpress-test-mail-result');
+                    var originalText = $button.html();
 
-                // Disable button and show loading
-                $button.prop('disabled', true);
-                $button.html('<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span> <?php echo esc_js(__('Sending...', 'pexpress')); ?>');
-                $result.hide();
+                    // Disable button and show loading
+                    $button.prop('disabled', true);
+                    $button.html('<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span> <?php echo esc_js(__('Sending...', 'pexpress')); ?>');
+                    $result.hide();
 
-                // Get form data
-                var formData = {
-                    action: 'pexpress_send_test_email',
-                    nonce: '<?php echo wp_create_nonce('pexpress_test_mail_ajax'); ?>',
-                    to: $('#test_email_to').val(),
-                    subject: $('#test_email_subject').val(),
-                    message: $('#test_email_message').val()
-                };
+                    // Get form data
+                    var formData = {
+                        action: 'pexpress_send_test_email',
+                        nonce: '<?php echo wp_create_nonce('pexpress_test_mail_ajax'); ?>',
+                        to: $('#test_email_to').val(),
+                        subject: $('#test_email_subject').val(),
+                        message: $('#test_email_message').val()
+                    };
 
-                // Send AJAX request
-                $.ajax({
-                    url: (typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof polarExpress !== 'undefined' ? polarExpress.ajaxUrl : '<?php echo admin_url('admin-ajax.php'); ?>')),
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        $button.prop('disabled', false);
-                        $button.html(originalText);
+                    // Send AJAX request
+                    $.ajax({
+                        url: (typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof polarExpress !== 'undefined' ? polarExpress.ajaxUrl : '<?php echo admin_url('admin-ajax.php'); ?>')),
+                        type: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            $button.prop('disabled', false);
+                            $button.html(originalText);
 
-                        if (response.success) {
-                            $result.removeClass('error info').addClass('success').html(
-                                '<strong><?php echo esc_js(__('Success!', 'pexpress')); ?></strong> ' + 
-                                response.data.message
-                            ).show();
-                        } else {
+                            if (response.success) {
+                                $result.removeClass('error info').addClass('success').html(
+                                    '<strong><?php echo esc_js(__('Success!', 'pexpress')); ?></strong> ' +
+                                    response.data.message
+                                ).show();
+                            } else {
+                                $result.removeClass('success info').addClass('error').html(
+                                    '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' +
+                                    (response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Unknown error occurred', 'pexpress')); ?>')
+                                ).show();
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $button.prop('disabled', false);
+                            $button.html(originalText);
                             $result.removeClass('success info').addClass('error').html(
-                                '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' + 
-                                (response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Unknown error occurred', 'pexpress')); ?>')
+                                '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' +
+                                '<?php echo esc_js(__('Failed to send request. Please try again.', 'pexpress')); ?>'
                             ).show();
                         }
-                    },
-                    error: function(xhr, status, error) {
-                        $button.prop('disabled', false);
-                        $button.html(originalText);
-                        $result.removeClass('success info').addClass('error').html(
-                            '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' + 
-                            '<?php echo esc_js(__('Failed to send request. Please try again.', 'pexpress')); ?>'
-                        ).show();
-                    }
+                    });
+                });
+
+                // SMS Test Form
+                $('#pexpress-test-sms-form').on('submit', function(e) {
+                    e.preventDefault();
+
+                    var $form = $(this);
+                    var $button = $('#pexpress-send-test-sms');
+                    var $result = $('#pexpress-test-sms-result');
+                    var originalText = $button.html();
+
+                    // Disable button and show loading
+                    $button.prop('disabled', true);
+                    $button.html('<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span> <?php echo esc_js(__('Sending...', 'pexpress')); ?>');
+                    $result.hide();
+
+                    // Get form data
+                    var formData = {
+                        action: 'pexpress_send_test_sms',
+                        nonce: '<?php echo wp_create_nonce('pexpress_test_sms_ajax'); ?>',
+                        phone: $('#test_sms_phone').val(),
+                        message: $('#test_sms_message').val()
+                    };
+
+                    // Send AJAX request
+                    $.ajax({
+                        url: (typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof polarExpress !== 'undefined' ? polarExpress.ajaxUrl : '<?php echo admin_url('admin-ajax.php'); ?>')),
+                        type: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            $button.prop('disabled', false);
+                            $button.html(originalText);
+
+                            if (response.success) {
+                                $result.removeClass('error info').addClass('success').html(
+                                    '<strong><?php echo esc_js(__('Success!', 'pexpress')); ?></strong> ' +
+                                    response.data.message
+                                ).show();
+                            } else {
+                                $result.removeClass('success info').addClass('error').html(
+                                    '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' +
+                                    (response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Unknown error occurred', 'pexpress')); ?>')
+                                ).show();
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $button.prop('disabled', false);
+                            $button.html(originalText);
+                            $result.removeClass('success info').addClass('error').html(
+                                '<strong><?php echo esc_js(__('Error:', 'pexpress')); ?></strong> ' +
+                                '<?php echo esc_js(__('Failed to send request. Please try again.', 'pexpress')); ?>'
+                            ).show();
+                        }
+                    });
                 });
             });
-        });
         </script>
-        <?php
+    <?php
     }
 
     /**

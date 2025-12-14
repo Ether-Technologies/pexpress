@@ -86,18 +86,20 @@ class PExpress_Admin_Settings
     /**
      * Recursively merge and sanitize arrays
      */
-    private function merge_and_sanitize($existing, $input)
+    private function merge_and_sanitize($existing, $input, $path = array())
     {
         $result = $existing;
 
         foreach ($input as $key => $value) {
             $key = sanitize_key($key);
+            $current_path = array_merge($path, array($key));
+            $path_string = implode('.', $current_path);
 
             if (is_array($value)) {
                 if (!isset($result[$key]) || !is_array($result[$key])) {
                     $result[$key] = array();
                 }
-                $result[$key] = $this->merge_and_sanitize($result[$key], $value);
+                $result[$key] = $this->merge_and_sanitize($result[$key], $value, $current_path);
             } else {
                 // For checkboxes, preserve '1' or empty string
                 if ($value === '1' || $value === 1) {
@@ -105,8 +107,14 @@ class PExpress_Admin_Settings
                 } elseif ($value === '' || $value === null) {
                     $result[$key] = '';
                 } else {
-                    // Sanitize text fields
-                    if (filter_var($value, FILTER_VALIDATE_URL)) {
+                    // Preserve HTML for email templates and SMS templates
+                    if (strpos($path_string, 'email_templates') !== false && $key === 'template') {
+                        // Use wp_kses_post to allow safe HTML in email templates
+                        $result[$key] = wp_kses_post($value);
+                    } elseif (strpos($path_string, 'sms_templates') !== false && $key === 'template') {
+                        // SMS templates are plain text, but preserve line breaks
+                        $result[$key] = sanitize_textarea_field($value);
+                    } elseif (filter_var($value, FILTER_VALIDATE_URL)) {
                         $result[$key] = esc_url_raw($value);
                     } else {
                         $result[$key] = sanitize_text_field($value);

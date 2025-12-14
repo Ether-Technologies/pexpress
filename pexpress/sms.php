@@ -46,24 +46,55 @@ function polar_send_sms($phone, $message)
     $params = PExpress_Sms_Api::set_get_parameter($phone, $message);
 
     if ($params === false) {
-        return new WP_Error('sms_config_error', __('SMS API configuration error. Please check your settings.', 'pexpress'));
+        // More detailed error logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $api_token = isset($settings['api_hash_token']) ? $settings['api_hash_token'] : '';
+            $api_sid = isset($settings['api_sid']) ? $settings['api_sid'] : '';
+            error_log('Polar Express SMS Config Error:');
+            error_log('  - API Token: ' . (empty($api_token) ? 'MISSING' : 'Set (' . strlen($api_token) . ' chars)'));
+            error_log('  - API SID: ' . (empty($api_sid) ? 'MISSING' : $api_sid));
+        }
+        return new WP_Error('sms_config_error', __('SMS API configuration error. Please check that API Token and SID are set in SMS Settings.', 'pexpress'));
     }
 
     $response = PExpress_Sms_Api::call_to_get_api($params);
 
     if (is_wp_error($response)) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Polar Express SMS Error: ' . $response->get_error_message());
+        }
         return $response;
     }
 
     // Log response for debugging
     if (defined('WP_DEBUG') && WP_DEBUG) {
         error_log('Polar Express SMS Response: ' . print_r($response, true));
+        error_log('Polar Express SMS Phone: ' . $phone);
+        error_log('Polar Express SMS Message: ' . $message);
     }
 
-    // Check response
+    // Check HTTP response code (index 0 contains ['code'] and ['message'])
     if (isset($response[0]) && isset($response[0]['code'])) {
-        $response_code = $response[0]['code'];
-        if ($response_code == 200) {
+        $http_code = $response[0]['code'];
+        if ($http_code == 200) {
+            // For ismsplus, also check the JSON body for success
+            if (isset($response[1])) {
+                $body = json_decode($response[1], true);
+                if (is_array($body)) {
+                    // ismsplus returns status in the body
+                    if (isset($body['status']) && strtolower($body['status']) === 'success') {
+                        return true;
+                    }
+                    if (isset($body['status_code']) && $body['status_code'] == 200) {
+                        return true;
+                    }
+                    // Log API error message if available
+                    if (defined('WP_DEBUG') && WP_DEBUG && isset($body['message'])) {
+                        error_log('Polar Express SMS API Message: ' . $body['message']);
+                    }
+                }
+            }
+            // HTTP 200 means the request was successful
             return true;
         }
     }
@@ -71,6 +102,11 @@ function polar_send_sms($phone, $message)
     // For ISMS, check if response contains success indicator
     if (isset($response[1]) && (false !== strpos($response[1], '1701') || false !== strpos($response[1], 'SUCCESS'))) {
         return true;
+    }
+
+    // Log failure for debugging
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('Polar Express SMS Failed - Response: ' . print_r($response, true));
     }
 
     return new WP_Error('sms_send_failed', __('Failed to send SMS.', 'pexpress'), $response);
@@ -213,6 +249,18 @@ function polar_send_order_notification($order_id, $template_key)
 
     $results = array('sms' => false, 'email' => false);
 
+    // Debug: Check if SMS is enabled
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        $options = get_option('pexpress_options', array());
+        $sms_config = isset($options['sms_config']) ? $options['sms_config'] : array();
+        $sms_templates = isset($options['sms_templates']) ? $options['sms_templates'] : array();
+        error_log('Polar Express SMS Debug - Template Key: ' . $template_key);
+        error_log('Polar Express SMS Debug - Global SMS Enabled: ' . (!empty($sms_config['enable_plugin']) ? 'Yes' : 'No'));
+        error_log('Polar Express SMS Debug - Template Enabled: ' . (!empty($sms_templates[$template_key]['enabled']) ? 'Yes' : 'No'));
+        error_log('Polar Express SMS Debug - API Token Set: ' . (!empty($sms_config['api_hash_token']) ? 'Yes' : 'No'));
+        error_log('Polar Express SMS Debug - API SID Set: ' . (!empty($sms_config['api_sid']) ? 'Yes' : 'No'));
+    }
+
     // Send SMS
     if (polar_is_sms_template_enabled($template_key)) {
         $phone = $order->get_billing_phone();
@@ -220,7 +268,22 @@ function polar_send_order_notification($order_id, $template_key)
             $message = polar_process_sms_template($template_key, $data);
             if (!empty($message)) {
                 $results['sms'] = polar_send_sms($phone, $message);
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    if (is_wp_error($results['sms'])) {
+                        error_log('Polar Express SMS Result: Error - ' . $results['sms']->get_error_message());
+                    } else {
+                        error_log('Polar Express SMS Result: ' . ($results['sms'] ? 'Success' : 'Failed'));
+                    }
+                }
             }
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Polar Express SMS Debug - No phone number for order #' . $order_id);
+            }
+        }
+    } else {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Polar Express SMS Debug - Template "' . $template_key . '" is not enabled');
         }
     }
 

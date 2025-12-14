@@ -687,6 +687,12 @@ class PExpress
 
         // Determine role-based mapping for per-role statuses
         $role_status_map = array(
+            'polar_hr' => array(
+                'assigned'    => 'assigned',
+                'proceeded'   => 'proceeded',
+                'confirmed'   => 'confirmed',
+                'completed'   => 'completed',
+            ),
             'polar_delivery' => array(
                 'meet_point_arrived'      => 'meet_point_arrived',
                 'delivery_location_arrived' => 'delivery_location_arrived',
@@ -727,7 +733,12 @@ class PExpress
 
         $matched_role = '';
         $role_key_for_status = '';
+        // Match user role to determine which per-role status to update
+        // Skip polar_hr in initial match - HR/admin can update any role's status via inference
         foreach ($role_status_map as $role_key => $map) {
+            if ($role_key === 'polar_hr') {
+                continue; // HR users use inference logic below
+            }
             if (in_array($role_key, $user->roles, true)) {
                 $matched_role = $role_key;
                 // Map role to status key
@@ -742,23 +753,79 @@ class PExpress
             }
         }
 
+        // If user is admin/HR and no role matched, infer the role from the status being set
+        $is_admin_or_hr = current_user_can('manage_woocommerce') || in_array('polar_hr', $user->roles);
+        if ($is_admin_or_hr && empty($role_key_for_status)) {
+            // Determine which role's status is being updated based on the new_status
+            $delivery_statuses = array('meet_point_arrived', 'delivery_location_arrived', 'service_in_progress', 'service_complete', 'customer_served');
+            $fridge_statuses = array('fridge_drop', 'fridge_collected', 'fridge_returned');
+            $distributor_statuses = array('distributor_prep', 'out_for_delivery', 'handoff_complete');
+            $agency_statuses = array('assigned', 'proceeded', 'confirmed', 'completed');
+
+            if (in_array($new_status, $delivery_statuses, true)) {
+                $role_key_for_status = 'delivery';
+                $matched_role = 'polar_delivery';
+            } elseif (in_array($new_status, $fridge_statuses, true)) {
+                $role_key_for_status = 'fridge';
+                $matched_role = 'polar_fridge';
+            } elseif (in_array($new_status, $distributor_statuses, true)) {
+                $role_key_for_status = 'distributor';
+                $matched_role = 'polar_distributor';
+            } elseif (in_array($new_status, $agency_statuses, true)) {
+                $role_key_for_status = 'agency';
+                $matched_role = 'polar_hr';
+            }
+        }
+
         $allowed_statuses = array();
         if ($matched_role && isset($role_status_map[$matched_role])) {
             $allowed_statuses = array_merge($allowed_statuses, array_keys($role_status_map[$matched_role]));
         }
 
-        $current_user = wp_get_current_user();
-        if (current_user_can('manage_woocommerce') || in_array('polar_hr', $current_user->roles)) {
+        // $is_admin_or_hr already defined above
+        if ($is_admin_or_hr) {
             $allowed_statuses = array_merge($allowed_statuses, array_keys($general_status_map));
+            // Admins and HR can set any status that's in the WC status map or role status maps
+            $allowed_statuses = array_merge($allowed_statuses, array_keys($wc_status_map));
+            // Also allow all statuses from all role maps for admins
+            foreach ($role_status_map as $role_key => $map) {
+                $allowed_statuses = array_merge($allowed_statuses, array_keys($map));
+            }
         }
+
+        // Also allow statuses that are in the WC status map (for backward compatibility)
+        if (isset($wc_status_map[$new_status])) {
+            $allowed_statuses[] = $new_status;
+        }
+
+        // Allow 'pending' status for all roles
+        if ($new_status === 'pending') {
+            $allowed_statuses[] = 'pending';
+        }
+
+        // Also allow statuses from sequence maps (for workflow flexibility)
+        $sequence_map = array(
+            'distributor' => array('pending', 'distributor_prep', 'out_for_delivery', 'handoff_complete'),
+            'delivery' => array('pending', 'meet_point_arrived', 'delivery_location_arrived', 'service_in_progress', 'service_complete', 'customer_served'),
+            'fridge' => array('pending', 'fridge_drop', 'fridge_collected', 'fridge_returned'),
+            'agency' => array('pending', 'assigned', 'proceeded', 'confirmed', 'completed'),
+        );
+        if ($role_key_for_status && isset($sequence_map[$role_key_for_status])) {
+            $allowed_statuses = array_merge($allowed_statuses, $sequence_map[$role_key_for_status]);
+        }
+
+        // Remove duplicates
+        $allowed_statuses = array_unique($allowed_statuses);
 
         if (!in_array($new_status, $allowed_statuses, true)) {
             wp_send_json_error(array('message' => __('Invalid status.', 'pexpress')));
         }
 
-        // Check if user is assigned to this order
+        // Check if user is assigned to this order (admins and HR bypass this check)
         $is_assigned = false;
-        if (in_array('polar_delivery', $user->roles, true)) {
+        if ($is_admin_or_hr) {
+            $is_assigned = true; // Admins and HR can update any order
+        } elseif (in_array('polar_delivery', $user->roles, true)) {
             $is_assigned = (PExpress_Core::get_delivery_user_id($order_id) === $user->ID);
         } elseif (in_array('polar_fridge', $user->roles, true)) {
             $is_assigned = (PExpress_Core::get_fridge_user_id($order_id) === $user->ID);
@@ -801,6 +868,13 @@ class PExpress
                     'fridge_collected',
                     'fridge_returned',
                 ),
+                'agency' => array(
+                    'pending',
+                    'assigned',
+                    'proceeded',
+                    'confirmed',
+                    'completed',
+                ),
             );
 
             if (isset($sequence_map[$role_key_for_status])) {
@@ -825,13 +899,57 @@ class PExpress
             // Get old status before update
             $old_status = PExpress_Core::get_role_status($order_id, $role_key_for_status);
 
-            PExpress_Core::update_role_status($order_id, $role_key_for_status, $new_status);
+            // Update the per-role status
+            $update_result = PExpress_Core::update_role_status($order_id, $role_key_for_status, $new_status);
+            
+            // Clear WooCommerce order cache to ensure fresh data on reload
+            if (function_exists('wc_get_order')) {
+                $cached_order = wc_get_order($order_id);
+                if ($cached_order && method_exists($cached_order, 'read_meta_data')) {
+                    $cached_order->read_meta_data(true); // Force refresh meta
+                }
+                // Clear WC order cache
+                wp_cache_delete('order-' . $order_id, 'orders');
+                wp_cache_delete($order_id, 'post_meta');
+                clean_post_cache($order_id);
+            }
+            
+            // Debug logging
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'Polar Express Status Update - Order: %d, Role: %s, Old Status: %s, New Status: %s, Update Result: %s',
+                    $order_id,
+                    $role_key_for_status,
+                    $old_status,
+                    $new_status,
+                    var_export($update_result, true)
+                ));
+            }
+            
             $display_name = $user->display_name ?: $user->user_login ?: __('User', 'pexpress');
             PExpress_Core::add_role_status_history($order_id, $role_key_for_status, $new_status, sprintf(__('Status updated by %s.', 'pexpress'), $display_name));
 
-            // Send notification if distributor status changed to "out_for_delivery"
-            if ($role_key_for_status === 'distributor' && $new_status === 'out_for_delivery' && $old_status !== 'out_for_delivery') {
-                polar_send_order_notification($order_id, 'out_for_delivery');
+            // Map status changes to notification template keys
+            $status_to_template_map = array(
+                // Distributor statuses
+                'distributor_prep' => 'order_proceeded',
+                'out_for_delivery' => 'out_for_delivery',
+                'handoff_complete' => 'order_completed',
+                // Delivery statuses
+                'meet_point_arrived' => 'order_proceeded',
+                'service_in_progress' => 'order_proceeded',
+                'service_complete' => 'order_completed',
+                'customer_served' => 'order_completed',
+                // Fridge statuses
+                'fridge_returned' => 'order_completed',
+                // Agency statuses
+                'confirmed' => 'order_confirmed',
+                'proceeded' => 'order_proceeded',
+            );
+
+            // Send notification if status changed and has a template mapping
+            if ($old_status !== $new_status && isset($status_to_template_map[$new_status])) {
+                polar_send_order_notification($order_id, $status_to_template_map[$new_status]);
             }
         }
 
@@ -844,7 +962,18 @@ class PExpress
         // If all tasks complete, mark order complete for overview
         self::maybe_mark_order_complete($order);
 
-        wp_send_json_success(array('message' => __('Status updated successfully.', 'pexpress')));
+        // Verify the status was updated correctly
+        $verified_status = '';
+        if (!empty($role_key_for_status)) {
+            $verified_status = PExpress_Core::get_role_status($order_id, $role_key_for_status);
+        }
+
+        wp_send_json_success(array(
+            'message' => __('Status updated successfully.', 'pexpress'),
+            'new_status' => $new_status,
+            'verified_status' => $verified_status,
+            'role' => $role_key_for_status,
+        ));
     }
 
     /**
