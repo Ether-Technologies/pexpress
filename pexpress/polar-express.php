@@ -189,7 +189,7 @@ class PExpress
         // Hook into wp_mail to log all emails
         add_action('phpmailer_init', array($this, 'log_wp_mail_emails'), 999);
         add_action('wp_mail_failed', array($this, 'log_wp_mail_failed'), 10, 1);
-        add_filter('wp_mail_succeeded', array($this, 'log_wp_mail_succeeded'), 10, 2);
+        add_action('wp_mail_succeeded', array($this, 'log_wp_mail_succeeded'), 10, 1);
     }
 
     /**
@@ -254,23 +254,20 @@ class PExpress
      * Update log when email succeeds
      *
      * @param array $mail_data Mail data
-     * @param array $result Result array
-     * @return array Unmodified mail data
      */
-    public function log_wp_mail_succeeded($mail_data, $result)
+    public function log_wp_mail_succeeded($mail_data)
     {
         // Try to get log_id from global
         global $pexpress_current_log_id;
         $log_id = isset($pexpress_current_log_id) ? $pexpress_current_log_id : null;
 
-        if ($log_id && class_exists('PExpress_Email_Log') && isset($result['result']) && $result['result']) {
+        if ($log_id && class_exists('PExpress_Email_Log')) {
+            // Update log with success status
             PExpress_Email_Log::update_log($log_id, 'success', '', null, '', 'wp_mail');
         }
 
         // Reset global
         $pexpress_current_log_id = null;
-
-        return $mail_data;
     }
 
     /**
@@ -901,7 +898,7 @@ class PExpress
 
             // Update the per-role status
             $update_result = PExpress_Core::update_role_status($order_id, $role_key_for_status, $new_status);
-            
+
             // Clear WooCommerce order cache to ensure fresh data on reload
             if (function_exists('wc_get_order')) {
                 $cached_order = wc_get_order($order_id);
@@ -913,7 +910,7 @@ class PExpress
                 wp_cache_delete($order_id, 'post_meta');
                 clean_post_cache($order_id);
             }
-            
+
             // Debug logging
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
@@ -925,7 +922,7 @@ class PExpress
                     var_export($update_result, true)
                 ));
             }
-            
+
             $display_name = $user->display_name ?: $user->user_login ?: __('User', 'pexpress');
             PExpress_Core::add_role_status_history($order_id, $role_key_for_status, $new_status, sprintf(__('Status updated by %s.', 'pexpress'), $display_name));
 

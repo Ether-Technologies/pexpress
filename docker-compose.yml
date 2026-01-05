@@ -49,6 +49,7 @@ services:
       - wordpress-app-data:/var/www/html
       - ./pexpress:/var/www/html/wp-content/plugins/polar-express
       - ../ethertech-wootp:/var/www/html/wp-content/plugins/ethertech-wootp
+      - ../mailgun:/var/www/html/wp-content/plugins/mailgun
     networks:
       - wordpress-dev-network
     healthcheck:
