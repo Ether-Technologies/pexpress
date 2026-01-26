@@ -32,8 +32,13 @@ class PExpress_Admin_Dashboards
         $pending_orders = wc_get_orders(array(
             'status' => 'processing',
             'limit' => -1,
-            'meta_key' => '_polar_needs_assignment',
-            'meta_value' => 'yes',
+            'meta_query' => array(
+                array(
+                    'key' => '_polar_needs_assignment',
+                    'value' => 'yes',
+                    'compare' => '=',
+                ),
+            ),
         ));
 
         // Get all HR (formerly delivery), fridge, and distributor users
@@ -50,14 +55,37 @@ class PExpress_Admin_Dashboards
     public function render_hr_dashboard()
     {
         $current_user = wp_get_current_user();
+        // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+        $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+        if ($debug_enabled) {
+            error_log(sprintf(
+                '[PEXPRESS DEBUG] render_hr_dashboard - User ID: %d, Roles: %s, Has manage_woocommerce: %s',
+                get_current_user_id(),
+                implode(', ', $current_user->roles),
+                current_user_can('manage_woocommerce') ? 'YES' : 'NO'
+            ));
+        }
+
         if (!in_array('polar_delivery', $current_user->roles) && !current_user_can('manage_woocommerce')) {
             wp_die(__('You do not have permission to access this page.', 'pexpress'));
         }
 
         $user_id = get_current_user_id();
 
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_hr_dashboard - Fetching orders for user ID: %d, role: delivery', $user_id));
+        }
+
         // Get orders assigned to this HR person
         $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'delivery');
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_hr_dashboard - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+        }
+
+        // Output debug console logs
+        PExpress_Core::output_debug_console();
 
         // Get orders by status
         $out_orders = array();
@@ -80,14 +108,37 @@ class PExpress_Admin_Dashboards
     public function render_fridge_dashboard()
     {
         $current_user = wp_get_current_user();
+        // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+        $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+        if ($debug_enabled) {
+            error_log(sprintf(
+                '[PEXPRESS DEBUG] render_fridge_dashboard - User ID: %d, Roles: %s, Has manage_woocommerce: %s',
+                get_current_user_id(),
+                implode(', ', $current_user->roles),
+                current_user_can('manage_woocommerce') ? 'YES' : 'NO'
+            ));
+        }
+
         if (!in_array('polar_fridge', $current_user->roles) && !current_user_can('manage_woocommerce')) {
             wp_die(__('You do not have permission to access this page.', 'pexpress'));
         }
 
         $user_id = get_current_user_id();
 
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_fridge_dashboard - Fetching orders for user ID: %d, role: fridge', $user_id));
+        }
+
         // Get orders assigned to this fridge provider
         $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'fridge');
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_fridge_dashboard - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+        }
+
+        // Output debug console logs
+        PExpress_Core::output_debug_console();
 
         // Get orders by status
         $collected_orders = array();
@@ -111,14 +162,37 @@ class PExpress_Admin_Dashboards
     public function render_distributor_dashboard()
     {
         $current_user = wp_get_current_user();
+        // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+        $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+        if ($debug_enabled) {
+            error_log(sprintf(
+                '[PEXPRESS DEBUG] render_distributor_dashboard - User ID: %d, Roles: %s, Has manage_woocommerce: %s',
+                get_current_user_id(),
+                implode(', ', $current_user->roles),
+                current_user_can('manage_woocommerce') ? 'YES' : 'NO'
+            ));
+        }
+
         if (!in_array('polar_distributor', $current_user->roles) && !current_user_can('manage_woocommerce')) {
             wp_die(__('You do not have permission to access this page.', 'pexpress'));
         }
 
         $user_id = get_current_user_id();
 
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_distributor_dashboard - Fetching orders for user ID: %d, role: distributor', $user_id));
+        }
+
         // Get orders assigned to this distributor
         $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'distributor');
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] render_distributor_dashboard - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+        }
+
+        // Output debug console logs
+        PExpress_Core::output_debug_console();
 
         include PEXPRESS_PLUGIN_DIR . 'templates/distributor-dashboard.php';
     }

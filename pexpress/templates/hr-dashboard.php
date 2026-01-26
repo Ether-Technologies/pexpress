@@ -1,7 +1,9 @@
 <?php
 
 /**
- * HR Dashboard Template
+ * Agency Dashboard Template
+ * This template is exclusively for Agency Dashboard functionality.
+ * It only displays Agency Dashboard content, regardless of user roles.
  *
  * @package PExpress
  * @since 1.0.0
@@ -16,7 +18,8 @@ if (!defined('ABSPATH')) {
 <?php
 // Calculate stats
 $pending_count = count($pending_orders);
-$hr_count = isset($hr_users) ? count($hr_users) : (isset($delivery_users) ? count($delivery_users) : 0);
+// Agency Dashboard only uses hr_users (SR Personnel)
+$hr_count = isset($hr_users) ? count($hr_users) : 0;
 $fridge_count = count($fridge_users);
 $distributor_count = count($distributor_users);
 ?>
@@ -228,7 +231,8 @@ $distributor_count = count($distributor_users);
                                         <select name="delivery_user_id" class="polar-select">
                                             <option value=""><?php esc_html_e('Select...', 'pexpress'); ?></option>
                                             <?php
-                                            $users_for_select = isset($hr_users) ? $hr_users : (isset($delivery_users) ? $delivery_users : array());
+                                            // Agency Dashboard only uses hr_users (SR Personnel)
+                                            $users_for_select = isset($hr_users) ? $hr_users : array();
                                             foreach ($users_for_select as $user) : ?>
                                                 <option value="<?php echo esc_attr($user->ID); ?>">
                                                     <?php echo esc_html($user->display_name); ?> (<?php echo esc_html($user->user_email); ?>)
@@ -302,29 +306,24 @@ $distributor_count = count($distributor_users);
                                 </div>
 
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <button type="submit" class="polar-btn polar-btn-primary">
-                                        <?php esc_html_e('Assign Order', 'pexpress'); ?>
-                                    </button>
                                     <?php
-                                    $current_user = wp_get_current_user();
-                                    $is_hr = in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce');
+                                    // Agency Dashboard: Check if order is already proceeded
                                     $order_proceeded = PExpress_Core::get_order_meta($order_id, '_polar_order_proceeded');
                                     $agency_status = PExpress_Core::get_role_status($order_id, 'agency');
                                     ?>
-                                    <?php if ($is_hr && !$order_proceeded && $agency_status !== 'proceeded') : ?>
-                                        <button type="button" class="polar-btn polar-btn-success polar-proceed-order" data-order-id="<?php echo esc_attr($order_id); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('polar_proceed_order')); ?>">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                            </svg>
-                                            <?php esc_html_e('Proceed', 'pexpress'); ?>
-                                        </button>
-                                    <?php elseif ($order_proceeded || $agency_status === 'proceeded') : ?>
+                                    <?php if ($order_proceeded || $agency_status === 'proceeded') : ?>
                                         <span class="polar-action-status" style="display: inline-flex; align-items: center; color: #46b450;">
                                             <span class="dashicons dashicons-yes-alt" style="font-size: 16px; width: 16px; height: 16px;"></span>
-                                            <?php esc_html_e('Proceeded', 'pexpress'); ?>
+                                            <?php esc_html_e('Assigned & Proceeded', 'pexpress'); ?>
                                         </span>
+                                    <?php else : ?>
+                                        <button type="submit" class="polar-btn polar-btn-primary">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;">
+                                                <path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <?php esc_html_e('Assign & Proceed Order', 'pexpress'); ?>
+                                        </button>
                                     <?php endif; ?>
-                                    <span class="polar-proceed-feedback" role="status" aria-live="polite"></span>
                                 </div>
                                 <span class="polar-assign-loading" style="display:none;"><?php esc_html_e('Assigning...', 'pexpress'); ?></span>
                             </form>
@@ -353,8 +352,13 @@ $distributor_count = count($distributor_users);
             'limit' => 20,
             'orderby' => 'date',
             'order' => 'DESC',
-            'meta_key' => '_polar_needs_assignment',
-            'meta_value' => 'no',
+            'meta_query' => array(
+                array(
+                    'key' => '_polar_needs_assignment',
+                    'value' => 'no',
+                    'compare' => '=',
+                ),
+            ),
         ));
         ?>
         <?php if (!empty($recent_assigned)) : ?>

@@ -308,41 +308,54 @@ if (defined('PEXPRESS_PLUGIN_DIR')) {
                         $current_status_icon = '⏳';
                     }
                 } else {
-                    $current_status_text = __('Confirmed', 'pexpress');
-                    $current_status_icon = '✓';
-                }
-
-                // Get confirmed date
-                $confirmed_date = '';
-                $hr_history = PExpress_Core::get_role_status_history($order_id, 'agency');
-                if (!empty($hr_history) && is_array($hr_history)) {
-                    foreach ($hr_history as $entry) {
-                        if (is_array($entry) && isset($entry['status']) && ($entry['status'] === 'assigned' || $entry['status'] === 'proceeded')) {
-                            if (isset($entry['timestamp']) && !empty($entry['timestamp'])) {
-                                if (function_exists('mysql2date')) {
-                                    $confirmed_date = mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $entry['timestamp']);
-                                } else {
-                                    $confirmed_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($entry['timestamp']));
-                                }
-                            }
-                            break;
-                        }
+                    // Check if order is confirmed by support
+                    // Must explicitly check for non-empty string/date value
+                    $order_confirmed_meta = PExpress_Core::get_order_meta($order_id, '_polar_order_confirmed');
+                    $order_confirmed = ($order_confirmed_meta !== false && $order_confirmed_meta !== '' && $order_confirmed_meta !== null && trim($order_confirmed_meta) !== '');
+                    if ($order_confirmed) {
+                        $current_status_text = __('Confirmed', 'pexpress');
+                        $current_status_icon = '✓';
+                    } else {
+                        $current_status_text = __('Order Placed', 'pexpress');
+                        $current_status_icon = '📝';
                     }
-                }
-                if (empty($confirmed_date)) {
-                    $confirmed_date = $formatted_date;
                 }
 
                 // Get order view URL
                 $order_view_url = wc_get_endpoint_url('view-order', $order_id, wc_get_page_permalink('myaccount'));
 
+                // Check if order is confirmed by support (check once, use everywhere)
+                // Must explicitly check for non-empty string/date value
+                $order_confirmed_meta = PExpress_Core::get_order_meta($order_id, '_polar_order_confirmed');
+                $order_confirmed = ($order_confirmed_meta !== false && $order_confirmed_meta !== '' && $order_confirmed_meta !== null && trim($order_confirmed_meta) !== '');
+
+                // Get confirmed date (from support confirmation, not agency assignment)
+                $confirmed_date = '';
+                if ($order_confirmed) {
+                    if (function_exists('mysql2date')) {
+                        $confirmed_date = mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $order_confirmed_meta);
+                    } else {
+                        $confirmed_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($order_confirmed_meta));
+                    }
+                }
+                // Fallback to order date if not confirmed yet
+                if (empty($confirmed_date)) {
+                    $confirmed_date = $formatted_date;
+                }
+
                 // Define order stages for horizontal progress bar
                 $stages = array(
+                    array(
+                        'key' => 'placed',
+                        'label' => __('Order Placed', 'pexpress'),
+                        'icon' => '📝',
+                        'completed' => true, // Always completed once order exists
+                    ),
                     array(
                         'key' => 'confirmed',
                         'label' => __('Order Confirmed', 'pexpress'),
                         'icon' => '✓',
-                        'completed' => ($hr_status === 'assigned' || $hr_status === 'proceeded'),
+                        'completed' => $order_confirmed, // Only completed when support confirms
                     ),
                     array(
                         'key' => 'preparing',
@@ -365,14 +378,31 @@ if (defined('PEXPRESS_PLUGIN_DIR')) {
                 );
 
                 // Determine current active stage
+                // Special logic: If order is not confirmed, keep "Order Placed" as active
+                // Otherwise, find first incomplete stage
                 $active_stage_index = 0;
-                foreach ($stages as $index => $stage) {
-                    if ($stage['completed']) {
-                        $active_stage_index = $index + 1;
+                if (!$order_confirmed) {
+                    // Order not confirmed yet - "Order Placed" should be active
+                    $active_stage_index = 0;
+                } else {
+                    // Order confirmed - find first incomplete stage
+                    foreach ($stages as $index => $stage) {
+                        if (!$stage['completed']) {
+                            $active_stage_index = $index;
+                            break;
+                        }
                     }
-                }
-                if ($active_stage_index >= count($stages)) {
-                    $active_stage_index = count($stages) - 1;
+                    // If all stages are completed, mark the last one as active
+                    $all_completed = true;
+                    foreach ($stages as $stage) {
+                        if (!$stage['completed']) {
+                            $all_completed = false;
+                            break;
+                        }
+                    }
+                    if ($all_completed && count($stages) > 0) {
+                        $active_stage_index = count($stages) - 1;
+                    }
                 }
             ?>
                 <a href="<?php echo esc_url($order_view_url); ?>" class="polar-order-card-link">

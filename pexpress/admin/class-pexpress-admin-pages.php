@@ -315,6 +315,24 @@ class PExpress_Admin_Pages
         }
 
         $changelog = array(
+            '1.0.6' => array(
+                'date' => date('Y-m-d'),
+                'added' => array(
+                    __('"Order Placed" stage in customer order tracking before confirmation', 'pexpress'),
+                    __('Combined "Assign Order" and "Proceed" buttons into single "Assign & Proceed Order" action', 'pexpress'),
+                ),
+                'improved' => array(
+                    __('Agency Dashboard now exclusively shows Agency content regardless of user roles', 'pexpress'),
+                    __('Order tracking progress bar logic for better stage visualization', 'pexpress'),
+                    __('Order confirmation workflow clarity in customer tracking', 'pexpress'),
+                ),
+                'fixed' => array(
+                    __('Fixed confusion between Assign Order and Proceed buttons in Agency Dashboard', 'pexpress'),
+                    __('Fixed order tracking showing "Order Confirmed" before support agent confirmation', 'pexpress'),
+                    __('Fixed active stage highlighting in customer order tracking', 'pexpress'),
+                    __('Fixed role priority in admin menu to ensure Agency Dashboard shows for polar_hr users', 'pexpress'),
+                ),
+            ),
             '1.0.5' => array(
                 'date' => date('Y-m-d'),
                 'added' => array(
@@ -830,7 +848,7 @@ Site: {{site}}', 'pexpress')); ?></textarea>
                     <div class="polar-version-header">
                         <h2>
                             <?php echo esc_html($version); ?>
-                            <?php if ($version === '1.0.5') : ?>
+                            <?php if ($version === '1.0.6') : ?>
                                 <span class="polar-badge latest"><?php esc_html_e('Latest', 'pexpress'); ?></span>
                             <?php endif; ?>
                         </h2>

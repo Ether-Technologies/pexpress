@@ -108,8 +108,13 @@ function polar_agency_dashboard_shortcode($atts)
     $pending_orders = wc_get_orders(array(
         'status' => 'processing',
         'limit' => -1,
-        'meta_key' => '_polar_needs_assignment',
-        'meta_value' => 'yes',
+        'meta_query' => array(
+            array(
+                'key' => '_polar_needs_assignment',
+                'value' => 'yes',
+                'compare' => '=',
+            ),
+        ),
     ));
 
     // Get all HR (formerly delivery), fridge, and distributor users
@@ -138,9 +143,19 @@ function polar_hr_dashboard_shortcode($atts)
     }
 
     $user_id = get_current_user_id();
+    // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+    $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_hr_dashboard_shortcode - User ID: %d, Role: delivery', $user_id));
+    }
 
     // Get orders assigned to this HR person
     $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'delivery');
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_hr_dashboard_shortcode - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+    }
 
     // Get orders by status
     $out_orders = array();
@@ -160,7 +175,14 @@ function polar_hr_dashboard_shortcode($atts)
 
     ob_start();
     include PEXPRESS_PLUGIN_DIR . 'templates/delivery-dashboard.php';
-    return ob_get_clean();
+    $output = ob_get_clean();
+
+    // Add debug console output
+    if ($debug_enabled) {
+        $output .= PExpress_Core::output_debug_console(true);
+    }
+
+    return $output;
 }
 
 /**
@@ -175,9 +197,19 @@ function polar_fridge_dashboard_shortcode($atts)
     }
 
     $user_id = get_current_user_id();
+    // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+    $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_fridge_dashboard_shortcode - User ID: %d, Role: fridge', $user_id));
+    }
 
     // Get orders assigned to this fridge provider
     $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'fridge');
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_fridge_dashboard_shortcode - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+    }
 
     // Get orders by status
     $collected_orders = array();
@@ -198,7 +230,14 @@ function polar_fridge_dashboard_shortcode($atts)
 
     ob_start();
     include PEXPRESS_PLUGIN_DIR . 'templates/fridge-dashboard.php';
-    return ob_get_clean();
+    $output = ob_get_clean();
+
+    // Add debug console output
+    if ($debug_enabled) {
+        $output .= PExpress_Core::output_debug_console(true);
+    }
+
+    return $output;
 }
 
 /**
@@ -213,9 +252,19 @@ function polar_distributor_dashboard_shortcode($atts)
     }
 
     $user_id = get_current_user_id();
+    // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+    $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_distributor_dashboard_shortcode - User ID: %d, Role: distributor', $user_id));
+    }
 
     // Get orders assigned to this distributor
     $assigned_orders = PExpress_Core::get_assigned_orders($user_id, 'distributor');
+
+    if ($debug_enabled) {
+        error_log(sprintf('[PEXPRESS DEBUG] polar_distributor_dashboard_shortcode - Received %d assigned orders', is_array($assigned_orders) ? count($assigned_orders) : 0));
+    }
 
     // Set flag to enqueue assets
     global $pexpress_shortcode_used;
@@ -223,7 +272,14 @@ function polar_distributor_dashboard_shortcode($atts)
 
     ob_start();
     include PEXPRESS_PLUGIN_DIR . 'templates/distributor-dashboard.php';
-    return ob_get_clean();
+    $output = ob_get_clean();
+
+    // Add debug console output
+    if ($debug_enabled) {
+        $output .= PExpress_Core::output_debug_console(true);
+    }
+
+    return $output;
 }
 
 /**
@@ -551,7 +607,7 @@ function polar_order_information_shortcode($atts)
     $meeting_datetime_display = $meeting_datetime_display;
 
     ob_start();
-    ?>
+?>
     <div class="wrap polar-dashboard polar-order-information">
         <div class="polar-dashboard-header">
             <div class="polar-header-content">
@@ -840,7 +896,8 @@ function polar_order_information_shortcode($atts)
                             <tfoot>
                                 <tr>
                                     <td colspan="3" class="text-right">
-                                        <strong><?php esc_html_e('Order Total', 'pexpress'); ?>:</strong></td>
+                                        <strong><?php esc_html_e('Order Total', 'pexpress'); ?>:</strong>
+                                    </td>
                                     <td><strong><?php echo wp_kses_post($order_total); ?></strong></td>
                                 </tr>
                             </tfoot>
@@ -850,7 +907,7 @@ function polar_order_information_shortcode($atts)
             <?php endif; ?>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 

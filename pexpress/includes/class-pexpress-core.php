@@ -263,15 +263,335 @@ class PExpress_Core
     public static function get_assigned_orders($user_id, $role = 'delivery')
     {
         $meta_key = '_polar_' . sanitize_key($role) . '_user_id';
+        $user_id = absint($user_id);
+        $current_user = wp_get_current_user();
+        // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+        $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
 
-        $args = array(
-            'status' => 'any',
-            'limit'  => -1,
-            'meta_key' => $meta_key,
-            'meta_value' => $user_id,
-        );
+        // Debug logging
+        if ($debug_enabled) {
+            error_log(sprintf(
+                '[PEXPRESS DEBUG] get_assigned_orders called - User ID: %d, Role: %s, Meta Key: %s, Current User ID: %d, Current User Roles: %s',
+                $user_id,
+                $role,
+                $meta_key,
+                get_current_user_id(),
+                implode(', ', $current_user->roles)
+            ));
+        }
 
-        return wc_get_orders($args);
+        if (!$user_id) {
+            if ($debug_enabled) {
+                error_log('[PEXPRESS DEBUG] get_assigned_orders - Invalid user ID, returning empty array');
+            }
+            return array();
+        }
+
+        // Check if WooCommerce is using HPOS (High-Performance Order Storage)
+        $is_hpos = false;
+        if (class_exists('\Automattic\WooCommerce\Utilities\OrderUtil')) {
+            $is_hpos = \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+        }
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] HPOS enabled: %s', $is_hpos ? 'YES' : 'NO'));
+        }
+
+        if ($is_hpos) {
+            // For HPOS, WooCommerce uses a different meta query structure
+            // Try multiple approaches for HPOS compatibility
+            $args = array(
+                'status' => 'any',
+                'limit'  => -1,
+                'meta_query' => array(
+                    array(
+                        'key' => $meta_key,
+                        'value' => $user_id,
+                        'compare' => '=',
+                    ),
+                ),
+            );
+        } else {
+            // For CPT, use traditional meta_key/meta_value for better compatibility
+            $args = array(
+                'status' => 'any',
+                'limit'  => -1,
+                'meta_key' => $meta_key,
+                'meta_value' => $user_id,
+            );
+        }
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] Query args (primary): %s', print_r($args, true)));
+        }
+
+        $orders = wc_get_orders($args);
+        $order_count = is_array($orders) ? count($orders) : 0;
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] Primary query returned %d orders', $order_count));
+            if ($order_count > 0) {
+                $order_ids = array_map(function ($order) {
+                    return $order->get_id();
+                }, $orders);
+                error_log(sprintf('[PEXPRESS DEBUG] Order IDs found: %s', implode(', ', $order_ids)));
+            }
+        }
+
+        // Fallback: If no orders found with primary method, try alternative
+        if (empty($orders) || !is_array($orders)) {
+            if ($debug_enabled) {
+                error_log('[PEXPRESS DEBUG] Primary query returned no results, trying fallback query');
+            }
+
+            // For HPOS, try direct database query and load orders
+            if ($is_hpos) {
+                global $wpdb;
+                $meta_table = $wpdb->prefix . 'wc_orders_meta';
+
+                // Try integer value
+                $order_ids = $wpdb->get_col($wpdb->prepare(
+                    "SELECT order_id FROM {$meta_table} WHERE meta_key = %s AND meta_value = %d",
+                    $meta_key,
+                    $user_id
+                ));
+
+                // If no results, try string value
+                if (empty($order_ids)) {
+                    $order_ids = $wpdb->get_col($wpdb->prepare(
+                        "SELECT order_id FROM {$meta_table} WHERE meta_key = %s AND meta_value = %s",
+                        $meta_key,
+                        (string) $user_id
+                    ));
+                }
+
+                if (!empty($order_ids)) {
+                    $orders = array();
+                    foreach ($order_ids as $order_id) {
+                        $order = wc_get_order($order_id);
+                        if ($order) {
+                            $orders[] = $order;
+                        }
+                    }
+                    if ($debug_enabled) {
+                        error_log(sprintf('[PEXPRESS DEBUG] HPOS direct DB query found %d orders: %s', count($orders), implode(', ', $order_ids)));
+                    }
+                }
+            }
+
+            // If still no orders, try with meta_query regardless of storage type
+            if (empty($orders) || !is_array($orders)) {
+                $fallback_args = array(
+                    'status' => 'any',
+                    'limit'  => -1,
+                    'meta_query' => array(
+                        'relation' => 'OR',
+                        array(
+                            'key' => $meta_key,
+                            'value' => $user_id,
+                            'compare' => '=',
+                            'type' => 'NUMERIC',
+                        ),
+                        array(
+                            'key' => $meta_key,
+                            'value' => (string) $user_id,
+                            'compare' => '=',
+                        ),
+                    ),
+                );
+
+                if ($debug_enabled) {
+                    error_log(sprintf('[PEXPRESS DEBUG] Fallback query args: %s', print_r($fallback_args, true)));
+                }
+
+                $orders = wc_get_orders($fallback_args);
+                $fallback_count = is_array($orders) ? count($orders) : 0;
+
+                if ($debug_enabled) {
+                    error_log(sprintf('[PEXPRESS DEBUG] Fallback query returned %d orders', $fallback_count));
+                    if ($fallback_count > 0) {
+                        $order_ids = array_map(function ($order) {
+                            return $order->get_id();
+                        }, $orders);
+                        error_log(sprintf('[PEXPRESS DEBUG] Fallback Order IDs found: %s', implode(', ', $order_ids)));
+                    }
+                }
+            }
+
+            // If still no orders, check database directly
+            if (empty($orders) && $debug_enabled) {
+                global $wpdb;
+                $order_meta_table = $is_hpos ? $wpdb->prefix . 'wc_orders_meta' : $wpdb->postmeta;
+                $order_id_column = $is_hpos ? 'order_id' : 'post_id';
+
+                $query = $wpdb->prepare(
+                    "SELECT {$order_id_column} FROM {$order_meta_table} WHERE meta_key = %s AND meta_value = %s",
+                    $meta_key,
+                    $user_id
+                );
+                $direct_results = $wpdb->get_col($query);
+
+                error_log(sprintf(
+                    '[PEXPRESS DEBUG] Direct database query (table: %s) found %d results: %s',
+                    $order_meta_table,
+                    count($direct_results),
+                    implode(', ', $direct_results)
+                ));
+
+                // Also check for string value
+                $query_string = $wpdb->prepare(
+                    "SELECT {$order_id_column} FROM {$order_meta_table} WHERE meta_key = %s AND meta_value = %s",
+                    $meta_key,
+                    (string) $user_id
+                );
+                $direct_results_string = $wpdb->get_col($query_string);
+
+                error_log(sprintf(
+                    '[PEXPRESS DEBUG] Direct database query (string value) found %d results: %s',
+                    count($direct_results_string),
+                    implode(', ', $direct_results_string)
+                ));
+
+                // Check all meta values for this key
+                $all_meta_query = $wpdb->prepare(
+                    "SELECT {$order_id_column}, meta_value FROM {$order_meta_table} WHERE meta_key = %s LIMIT 20",
+                    $meta_key
+                );
+                $all_meta = $wpdb->get_results($all_meta_query);
+
+                // Store database query results for console output
+                if (!isset($GLOBALS['pexpress_debug_db_results'])) {
+                    $GLOBALS['pexpress_debug_db_results'] = array();
+                }
+                $GLOBALS['pexpress_debug_db_results'][] = array(
+                    'meta_key' => $meta_key,
+                    'user_id' => $user_id,
+                    'table' => $order_meta_table,
+                    'direct_results_int' => $direct_results,
+                    'direct_results_string' => $direct_results_string,
+                    'all_meta_samples' => $all_meta ? array_slice($all_meta, 0, 5) : array(),
+                );
+
+                if ($all_meta) {
+                    $meta_values = array();
+                    foreach ($all_meta as $meta) {
+                        $meta_values[] = sprintf(
+                            'Order %s: value=%s (type: %s)',
+                            $meta->{$order_id_column},
+                            $meta->meta_value,
+                            gettype($meta->meta_value)
+                        );
+                    }
+                    error_log(sprintf('[PEXPRESS DEBUG] Sample meta values for key %s: %s', $meta_key, implode(' | ', $meta_values)));
+                }
+            }
+        }
+
+        // Ensure we return an array
+        if (!is_array($orders)) {
+            if ($debug_enabled) {
+                error_log(sprintf('[PEXPRESS DEBUG] Orders is not an array, type: %s', gettype($orders)));
+            }
+            return array();
+        }
+
+        if ($debug_enabled) {
+            error_log(sprintf('[PEXPRESS DEBUG] get_assigned_orders returning %d orders', count($orders)));
+
+            // Also output to browser console via JavaScript
+            $debug_data = array(
+                'user_id' => $user_id,
+                'role' => $role,
+                'meta_key' => $meta_key,
+                'is_hpos' => $is_hpos,
+                'order_count' => count($orders),
+                'order_ids' => array_map(function ($order) {
+                    return $order->get_id();
+                }, $orders),
+            );
+
+            // Store debug data for JavaScript output
+            if (!isset($GLOBALS['pexpress_debug_data'])) {
+                $GLOBALS['pexpress_debug_data'] = array();
+            }
+            $GLOBALS['pexpress_debug_data'][] = $debug_data;
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Output debug data as JavaScript console logs
+     *
+     * @param bool $return_string Whether to return string instead of outputting directly.
+     * @return string|void
+     */
+    public static function output_debug_console($return_string = false)
+    {
+        // Enable debugging if WP_DEBUG is on OR if PEXPRESS_DEBUG is defined
+        $debug_enabled = (defined('WP_DEBUG') && WP_DEBUG) || (defined('PEXPRESS_DEBUG') && PEXPRESS_DEBUG);
+
+        if (!$debug_enabled) {
+            return $return_string ? '' : null;
+        }
+
+        if (!isset($GLOBALS['pexpress_debug_data']) || empty($GLOBALS['pexpress_debug_data'])) {
+            return $return_string ? '' : null;
+        }
+
+        $debug_data = $GLOBALS['pexpress_debug_data'];
+        $output = '<script type="text/javascript">' . "\n";
+        $output .= "console.group('🔍 PEXPRESS DEBUG - Order Query Results');\n";
+
+        foreach ($debug_data as $index => $data) {
+            $output .= sprintf(
+                "console.log('Query #%d:', {\n",
+                $index + 1
+            );
+            $output .= sprintf("  user_id: %d,\n", $data['user_id']);
+            $output .= sprintf("  role: '%s',\n", esc_js($data['role']));
+            $output .= sprintf("  meta_key: '%s',\n", esc_js($data['meta_key']));
+            $output .= sprintf("  is_hpos: %s,\n", $data['is_hpos'] ? 'true' : 'false');
+            $output .= sprintf("  order_count: %d,\n", $data['order_count']);
+            $output .= sprintf("  order_ids: %s\n", json_encode($data['order_ids']));
+            $output .= "});\n";
+        }
+
+        // Add database query results if available
+        if (isset($GLOBALS['pexpress_debug_db_results']) && !empty($GLOBALS['pexpress_debug_db_results'])) {
+            $output .= "console.group('📊 Direct Database Query Results');\n";
+            foreach ($GLOBALS['pexpress_debug_db_results'] as $index => $db_data) {
+                $output .= sprintf("console.log('DB Query #%d:', {\n", $index + 1);
+                $output .= sprintf("  meta_key: '%s',\n", esc_js($db_data['meta_key']));
+                $output .= sprintf("  user_id: %d,\n", $db_data['user_id']);
+                $output .= sprintf("  table: '%s',\n", esc_js($db_data['table']));
+                $output .= sprintf("  direct_results_int: %s,\n", json_encode($db_data['direct_results_int']));
+                $output .= sprintf("  direct_results_string: %s,\n", json_encode($db_data['direct_results_string']));
+                if (!empty($db_data['all_meta_samples'])) {
+                    $samples = array();
+                    foreach ($db_data['all_meta_samples'] as $sample) {
+                        $order_id_col = strpos($db_data['table'], 'wc_orders_meta') !== false ? 'order_id' : 'post_id';
+                        $samples[] = sprintf('Order %s: value=%s', $sample->{$order_id_col}, $sample->meta_value);
+                    }
+                    $output .= sprintf("  sample_meta_values: %s,\n", json_encode($samples));
+                }
+                $output .= "});\n";
+            }
+            $output .= "console.groupEnd();\n";
+            unset($GLOBALS['pexpress_debug_db_results']);
+        }
+
+        $output .= "console.groupEnd();\n";
+        $output .= '</script>' . "\n";
+
+        // Clear debug data after output
+        unset($GLOBALS['pexpress_debug_data']);
+
+        if ($return_string) {
+            return $output;
+        }
+
+        echo $output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
     /**

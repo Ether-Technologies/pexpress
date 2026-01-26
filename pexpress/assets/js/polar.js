@@ -97,7 +97,7 @@
             var $button = $form.find('button[type="submit"]');
 
             // Disable button
-            $button.prop('disabled', true).text('Assigning...');
+            $button.prop('disabled', true).html('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;"><path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>Assigning & Proceeding...');
 
             // Prepare form data
             var formData = $form.serialize();
@@ -117,12 +117,12 @@
                         showNotice('Order assigned successfully!', 'success');
                     } else {
                         showNotice(response.data.message || 'Failed to assign order.', 'error');
-                        $button.prop('disabled', false).text('Assign');
+                        $button.prop('disabled', false).html('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;"><path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>Assign & Proceed Order');
                     }
                 },
                 error: function () {
                     showNotice('An error occurred. Please try again.', 'error');
-                    $button.prop('disabled', false).text('Assign');
+                    $button.prop('disabled', false).html('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;"><path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>Assign & Proceed Order');
                 }
             });
         });

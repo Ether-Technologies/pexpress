@@ -51,8 +51,12 @@ class PExpress_Admin_Menus
         $main_capability = 'read'; // Basic read capability
 
         // Determine which dashboard to show based on role
+        // Priority: Agency (polar_hr) always takes precedence, even if user has other roles
         $main_page_callback = 'render_agency_dashboard';
-        if (in_array('polar_delivery', $current_user->roles)) {
+        if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
+            // Agency Dashboard - highest priority
+            $main_page_callback = 'render_agency_dashboard';
+        } elseif (in_array('polar_delivery', $current_user->roles)) {
             $main_page_callback = 'render_hr_dashboard';
         } elseif (in_array('polar_fridge', $current_user->roles)) {
             $main_page_callback = 'render_fridge_dashboard';
@@ -99,8 +103,9 @@ class PExpress_Admin_Menus
             );
         }
 
-        // HR Dashboard (formerly Delivery) - Only show for HR users, not for Agency users
-        if (in_array('polar_delivery', $current_user->roles) || (current_user_can('manage_woocommerce') && !in_array('polar_hr', $current_user->roles))) {
+        // HR Dashboard (formerly Delivery) - Show for delivery users
+        // Users with polar_hr can also access this if they have polar_delivery role
+        if (in_array('polar_delivery', $current_user->roles)) {
             add_submenu_page(
                 'polar-express',
                 __('HR Dashboard', 'pexpress'),

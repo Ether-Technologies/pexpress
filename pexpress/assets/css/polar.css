@@ -1939,6 +1939,7 @@ body.polar-order-edit-page #wpbody-content {
 /* Ensure Select2 rendering above modal */
 .select2-container {
   z-index: 100002 !important; /* Higher than modal (100000) */
+  width: 100% !important;
 }
 
 .select2-dropdown {

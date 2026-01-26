@@ -4,7 +4,7 @@
  * Plugin Name: Polar Express
  * Plugin URI: https://github.com/atiqisrak/pexpress
  * Description: Custom WordPress extension designed to enhance manual order processing and delivery workflows for Polar's bulk ice cream service.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Atiq Israk
  * Author URI: https://ethertech.ltd/
  * License: GPL v3 or later
@@ -31,7 +31,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('PEXPRESS_VERSION', '1.0.5');
+define('PEXPRESS_VERSION', '1.0.6');
 define('PEXPRESS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PEXPRESS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PEXPRESS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -636,7 +636,21 @@ class PExpress
             $order->update_status('polar-assigned', __('Order assigned by Agency.', 'pexpress'));
         }
 
-        wp_send_json_success(array('message' => __('Order assigned successfully.', 'pexpress')));
+        // Automatically proceed the order after assignment
+        PExpress_Core::update_role_status($order_id, 'agency', 'proceeded');
+        PExpress_Core::update_order_meta($order_id, '_polar_order_proceeded', current_time('mysql'));
+        PExpress_Core::update_order_meta($order_id, '_polar_order_proceeded_by', $current_user->ID);
+
+        // Send proceed notifications
+        $results = polar_send_order_notification($order_id, 'order_proceeded');
+
+        wp_send_json_success(array(
+            'message' => __('Order assigned and proceeded successfully.', 'pexpress'),
+            'notifications' => array(
+                'sms' => !is_wp_error($results['sms']) && $results['sms'] !== false,
+                'email' => !is_wp_error($results['email']) && $results['email'] !== false,
+            ),
+        ));
     }
 
     /**
@@ -653,13 +667,16 @@ class PExpress
         $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
         $nonce_key = 'polar_status_nonce';
 
-        // Check which form type
+        // Check which form type and set role accordingly
+        $form_role = '';
         if (isset($_POST['polar_fridge_nonce'])) {
             $nonce_key = 'polar_fridge_nonce';
             $nonce_action = 'polar_fridge_status_' . $order_id;
+            $form_role = 'polar_fridge';
         } elseif (isset($_POST['polar_distributor_nonce'])) {
             $nonce_key = 'polar_distributor_nonce';
             $nonce_action = 'polar_distributor_status_' . $order_id;
+            $form_role = 'polar_distributor';
         } else {
             $nonce_action = 'polar_update_status_' . $order_id;
         }
@@ -730,23 +747,36 @@ class PExpress
 
         $matched_role = '';
         $role_key_for_status = '';
-        // Match user role to determine which per-role status to update
-        // Skip polar_hr in initial match - HR/admin can update any role's status via inference
-        foreach ($role_status_map as $role_key => $map) {
-            if ($role_key === 'polar_hr') {
-                continue; // HR users use inference logic below
+
+        // If form role is set (from nonce), use it directly
+        if (!empty($form_role)) {
+            $matched_role = $form_role;
+            if ($form_role === 'polar_delivery') {
+                $role_key_for_status = 'delivery';
+            } elseif ($form_role === 'polar_fridge') {
+                $role_key_for_status = 'fridge';
+            } elseif ($form_role === 'polar_distributor') {
+                $role_key_for_status = 'distributor';
             }
-            if (in_array($role_key, $user->roles, true)) {
-                $matched_role = $role_key;
-                // Map role to status key
-                if ($role_key === 'polar_delivery') {
-                    $role_key_for_status = 'delivery';
-                } elseif ($role_key === 'polar_fridge') {
-                    $role_key_for_status = 'fridge';
-                } elseif ($role_key === 'polar_distributor') {
-                    $role_key_for_status = 'distributor';
+        } else {
+            // Match user role to determine which per-role status to update
+            // Skip polar_hr in initial match - HR/admin can update any role's status via inference
+            foreach ($role_status_map as $role_key => $map) {
+                if ($role_key === 'polar_hr') {
+                    continue; // HR users use inference logic below
                 }
-                break;
+                if (in_array($role_key, $user->roles, true)) {
+                    $matched_role = $role_key;
+                    // Map role to status key
+                    if ($role_key === 'polar_delivery') {
+                        $role_key_for_status = 'delivery';
+                    } elseif ($role_key === 'polar_fridge') {
+                        $role_key_for_status = 'fridge';
+                    } elseif ($role_key === 'polar_distributor') {
+                        $role_key_for_status = 'distributor';
+                    }
+                    break;
+                }
             }
         }
 
