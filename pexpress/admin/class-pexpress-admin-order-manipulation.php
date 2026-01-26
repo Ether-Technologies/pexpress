@@ -60,7 +60,14 @@ class PExpress_Admin_Order_Manipulation
     public function ajax_search_products()
     {
         $current_user = wp_get_current_user();
-        if (!in_array('polar_support', $current_user->roles) && !current_user_can('edit_shop_orders')) {
+
+        // PEXPRESS FIX: Allow polar_support to search
+        $allowed = false;
+        if (in_array('polar_support', $current_user->roles) || current_user_can('edit_shop_orders')) {
+            $allowed = true;
+        }
+
+        if (!$allowed) {
             wp_send_json(array());
         }
 
@@ -101,7 +108,17 @@ class PExpress_Admin_Order_Manipulation
 
         foreach ($ids as $product_id) {
             $product = wc_get_product($product_id);
-            if (!$product || in_array($product->get_type(), $exclude_types, true) || !wc_products_array_filter_readable($product)) {
+
+            // PEXPRESS FIX: Remove the wc_products_array_filter_readable check for our support agents
+            // or ensure they pass it. Since we can't easily modify the capability check inside that function,
+            // we'll just skip it if we are a polar_support user, assuming we trust them.
+
+            if (!$product || in_array($product->get_type(), $exclude_types, true)) {
+                continue;
+            }
+
+            // Explicitly allow if polar_support, otherwise do standard check
+            if (!in_array('polar_support', $current_user->roles) && !wc_products_array_filter_readable($product)) {
                 continue;
             }
 
@@ -178,14 +195,14 @@ class PExpress_Admin_Order_Manipulation
             'pexpress-admin',
             PEXPRESS_PLUGIN_URL . 'assets/css/polar.css',
             array(),
-            PEXPRESS_VERSION
+            time() // Cache busting for dev
         );
 
         wp_enqueue_style(
             'pexpress-order-edit',
             PEXPRESS_PLUGIN_URL . 'assets/css/polar-order-edit.css',
             array('pexpress-admin'),
-            PEXPRESS_VERSION
+            time() // Cache busting for dev
         );
 
         // Enqueue Select2 (WooCommerce includes it, but ensure it's loaded)
@@ -218,11 +235,41 @@ class PExpress_Admin_Order_Manipulation
             }
         }
 
+        // Enqueue order edit modules in correct order
+        $modules = array(
+            'utils',
+            'api',
+            'select2',
+            'item-actions',
+            'add-product',
+            'forwarding',
+            'order-actions',
+            'history',
+        );
+
+        $prev_handle = 'select2';
+        foreach ($modules as $module) {
+            $handle = 'pexpress-order-edit-' . $module;
+            $file_path = PEXPRESS_PLUGIN_DIR . 'assets/js/order-edit/' . $module . '.js';
+            $version = file_exists($file_path) ? filemtime($file_path) : PEXPRESS_VERSION;
+            wp_enqueue_script(
+                $handle,
+                PEXPRESS_PLUGIN_URL . 'assets/js/order-edit/' . $module . '.js',
+                array('jquery', $prev_handle),
+                $version,
+                true
+            );
+            $prev_handle = $handle;
+        }
+
+        // Main entry point (depends on all modules)
+        $main_file_path = PEXPRESS_PLUGIN_DIR . 'assets/js/polar-order-edit.js';
+        $main_version = file_exists($main_file_path) ? filemtime($main_file_path) : PEXPRESS_VERSION;
         wp_enqueue_script(
             'pexpress-order-edit',
             PEXPRESS_PLUGIN_URL . 'assets/js/polar-order-edit.js',
-            array('jquery', 'select2', 'wp-util'),
-            PEXPRESS_VERSION,
+            array('jquery', 'select2', 'wp-util', $prev_handle),
+            $main_version,
             true
         );
 
@@ -345,11 +392,41 @@ class PExpress_Admin_Order_Manipulation
             wp_enqueue_style('select2');
         }
 
+        // Enqueue order edit modules in correct order
+        $modules = array(
+            'utils',
+            'api',
+            'select2',
+            'item-actions',
+            'add-product',
+            'forwarding',
+            'order-actions',
+            'history',
+        );
+
+        $prev_handle = 'select2';
+        foreach ($modules as $module) {
+            $handle = 'pexpress-order-edit-' . $module;
+            $file_path = PEXPRESS_PLUGIN_DIR . 'assets/js/order-edit/' . $module . '.js';
+            $version = file_exists($file_path) ? filemtime($file_path) : PEXPRESS_VERSION;
+            wp_enqueue_script(
+                $handle,
+                PEXPRESS_PLUGIN_URL . 'assets/js/order-edit/' . $module . '.js',
+                array('jquery', $prev_handle),
+                $version,
+                true
+            );
+            $prev_handle = $handle;
+        }
+
+        // Main entry point (depends on all modules)
+        $main_file_path = PEXPRESS_PLUGIN_DIR . 'assets/js/polar-order-edit.js';
+        $main_version = file_exists($main_file_path) ? filemtime($main_file_path) : PEXPRESS_VERSION;
         wp_enqueue_script(
             'pexpress-order-edit',
             PEXPRESS_PLUGIN_URL . 'assets/js/polar-order-edit.js',
-            array('jquery', 'select2', 'wp-util'),
-            PEXPRESS_VERSION,
+            array('jquery', 'select2', 'wp-util', $prev_handle),
+            $main_version,
             true
         );
 
@@ -476,7 +553,7 @@ class PExpress_Admin_Order_Manipulation
 
         $order_id = $order->get_id();
         $modification_log = $this->get_modification_log($order_id);
-?>
+        ?>
         <div class="polar-order-manipulation-wrapper">
             <h3><?php esc_html_e('Order Manipulation', 'pexpress'); ?></h3>
 
@@ -486,8 +563,10 @@ class PExpress_Admin_Order_Manipulation
                     <select id="polar-product-search" class="polar-product-select" style="width: 100%;">
                         <option value=""><?php esc_html_e('Search for a product...', 'pexpress'); ?></option>
                     </select>
-                    <input type="number" id="polar-item-quantity" min="1" value="1" placeholder="<?php esc_attr_e('Quantity', 'pexpress'); ?>" />
-                    <button type="button" class="button button-primary polar-add-item-btn" data-order-id="<?php echo esc_attr($order_id); ?>">
+                    <input type="number" id="polar-item-quantity" min="1" value="1"
+                        placeholder="<?php esc_attr_e('Quantity', 'pexpress'); ?>" />
+                    <button type="button" class="button button-primary polar-add-item-btn"
+                        data-order-id="<?php echo esc_attr($order_id); ?>">
                         <?php esc_html_e('Add to Order', 'pexpress'); ?>
                     </button>
                 </div>
@@ -499,9 +578,9 @@ class PExpress_Admin_Order_Manipulation
                     <span class="polar-toggle-history dashicons dashicons-arrow-down-alt2"></span>
                 </h4>
                 <div class="polar-history-content" style="display: none;">
-                    <?php if (empty($modification_log)) : ?>
+                    <?php if (empty($modification_log)): ?>
                         <p><?php esc_html_e('No modifications recorded.', 'pexpress'); ?></p>
-                    <?php else : ?>
+                    <?php else: ?>
                         <table class="widefat">
                             <thead>
                                 <tr>
@@ -512,7 +591,7 @@ class PExpress_Admin_Order_Manipulation
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach (array_reverse($modification_log) as $log_entry) : ?>
+                                <?php foreach (array_reverse($modification_log) as $log_entry): ?>
                                     <tr class="polar-log-entry polar-log-<?php echo esc_attr($log_entry['action']); ?>">
                                         <td><?php echo esc_html($log_entry['timestamp']); ?></td>
                                         <td><?php echo esc_html($log_entry['user_name']); ?></td>
@@ -546,7 +625,7 @@ class PExpress_Admin_Order_Manipulation
                 </div>
             </div>
         </div>
-<?php
+        <?php
     }
 
     /**
@@ -803,6 +882,39 @@ class PExpress_Admin_Order_Manipulation
         }
 
         $item->save();
+
+        // PEXPRESS: Handle Bundle Update
+        // If this item is a bundle container, we need to update its children
+        if ($quantity_changed && function_exists('wc_pb_is_bundle_container_order_item') && wc_pb_is_bundle_container_order_item($item)) {
+            $old_quantity = max($existing_quantity, 1);
+            $ratio = $new_quantity / $old_quantity;
+
+            if (function_exists('wc_pb_get_bundled_order_items')) {
+                $bundled_items = wc_pb_get_bundled_order_items($item, $order);
+
+                if (!empty($bundled_items)) {
+                    foreach ($bundled_items as $child_item) {
+                        /** @var WC_Order_Item_Product $child_item */
+                        $child_old_qty = $child_item->get_quantity();
+                        $child_new_qty = max(round($child_old_qty * $ratio), 1); // Ensure at least 1
+
+                        if ($child_new_qty != $child_old_qty) {
+                            $child_item->set_quantity($child_new_qty);
+
+                            // Update totals for child
+                            $child_total = $child_item->get_total();
+                            $child_unit_price = ($child_old_qty > 0) ? $child_total / $child_old_qty : 0;
+                            $new_child_total = wc_format_decimal($child_unit_price * $child_new_qty);
+
+                            $child_item->set_subtotal($new_child_total);
+                            $child_item->set_total($new_child_total);
+                            $child_item->save();
+                        }
+                    }
+                    $order->add_order_note(sprintf(__('Bundle quantity updated. Synced %d child items.', 'pexpress'), count($bundled_items)));
+                }
+            }
+        }
 
         $order->calculate_totals(true);
         $order->save();

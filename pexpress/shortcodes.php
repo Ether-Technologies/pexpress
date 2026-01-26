@@ -41,7 +41,8 @@ function pexpress_output_shortcode_css()
         // Output main polar CSS
         if (!wp_style_is('polar-express', 'enqueued') && !wp_style_is('polar-express', 'done')) {
             $css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar.css';
-            $version = PEXPRESS_VERSION;
+            $css_url = PEXPRESS_PLUGIN_URL . 'assets/css/polar.css';
+            $version = time(); // Cache busting
             echo '<link rel="stylesheet" id="polar-express-css" href="' . esc_url($css_url) . '?ver=' . esc_attr($version) . '" type="text/css" media="all">' . "\n";
         }
         // Output order tracking CSS if track_my_order shortcode is used
@@ -526,10 +527,10 @@ function polar_order_information_shortcode($atts)
 
     // Enqueue assets
     wp_enqueue_style(
-        'polar-order-edit',
-        PEXPRESS_PLUGIN_URL . 'assets/css/polar-order-edit.css',
+        'pexpress-admin', // Use same handle as admin to prevent dupes if loaded together
+        PEXPRESS_PLUGIN_URL . 'assets/css/polar.css',
         array(),
-        PEXPRESS_VERSION
+        time() // Cache busting
     );
 
     // Make variables available to template
@@ -550,7 +551,7 @@ function polar_order_information_shortcode($atts)
     $meeting_datetime_display = $meeting_datetime_display;
 
     ob_start();
-?>
+    ?>
     <div class="wrap polar-dashboard polar-order-information">
         <div class="polar-dashboard-header">
             <div class="polar-header-content">
@@ -578,8 +579,12 @@ function polar_order_information_shortcode($atts)
                     <div class="order-detail-row">
                         <div class="order-detail-item">
                             <span class="detail-icon">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                 </svg>
                             </span>
                             <div class="detail-content">
@@ -589,10 +594,17 @@ function polar_order_information_shortcode($atts)
                         </div>
                         <div class="order-detail-item">
                             <span class="detail-icon">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z" fill="currentColor" />
-                                    <path d="M12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6Z" fill="currentColor" />
-                                    <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z" fill="currentColor" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z"
+                                        fill="currentColor" />
+                                    <path
+                                        d="M12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6Z"
+                                        fill="currentColor" />
+                                    <path
+                                        d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z"
+                                        fill="currentColor" />
                                 </svg>
                             </span>
                             <div class="detail-content">
@@ -613,9 +625,15 @@ function polar_order_information_shortcode($atts)
                     <div class="order-detail-row">
                         <div class="order-detail-item">
                             <span class="detail-icon">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                 </svg>
                             </span>
                             <div class="detail-content">
@@ -623,11 +641,15 @@ function polar_order_information_shortcode($atts)
                                 <span class="detail-value customer-name"><?php echo esc_html($customer_name); ?></span>
                             </div>
                         </div>
-                        <?php if ($billing_email) : ?>
+                        <?php if ($billing_email): ?>
                             <div class="order-detail-item">
                                 <span class="detail-icon">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
                                     </svg>
                                 </span>
                                 <div class="detail-content">
@@ -639,12 +661,16 @@ function polar_order_information_shortcode($atts)
                             </div>
                         <?php endif; ?>
                     </div>
-                    <?php if ($billing_phone) : ?>
+                    <?php if ($billing_phone): ?>
                         <div class="order-detail-row">
                             <div class="order-detail-item">
                                 <span class="detail-icon">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M3 5C3 3.89543 3.89543 3 5 3H8.27924C8.70967 3 9.09181 3.27543 9.22792 3.68377L10.7257 8.17721C10.8831 8.64932 10.6694 9.16531 10.2243 9.38787L7.96701 10.5165C9.06925 12.9612 11.0388 14.9308 13.4835 16.033L14.6121 13.7757C14.8347 13.3306 15.3507 13.1169 15.8228 13.2743L20.3162 14.7721C20.7246 14.9082 21 15.2903 21 15.7208V19C21 20.1046 20.1046 21 19 21H18C9.71573 21 3 14.2843 3 6V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M3 5C3 3.89543 3.89543 3 5 3H8.27924C8.70967 3 9.09181 3.27543 9.22792 3.68377L10.7257 8.17721C10.8831 8.64932 10.6694 9.16531 10.2243 9.38787L7.96701 10.5165C9.06925 12.9612 11.0388 14.9308 13.4835 16.033L14.6121 13.7757C14.8347 13.3306 15.3507 13.1169 15.8228 13.2743L20.3162 14.7721C20.7246 14.9082 21 15.2903 21 15.7208V19C21 20.1046 20.1046 21 19 21H18C9.71573 21 3 14.2843 3 6V5Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
                                     </svg>
                                 </span>
                                 <div class="detail-content">
@@ -660,7 +686,7 @@ function polar_order_information_shortcode($atts)
             </div>
 
             <!-- Billing Address Card -->
-            <?php if ($billing_address && $billing_address !== __('No address provided', 'pexpress')) : ?>
+            <?php if ($billing_address && $billing_address !== __('No address provided', 'pexpress')): ?>
                 <div class="polar-order-item">
                     <div class="order-header">
                         <h4><?php esc_html_e('Billing Address', 'pexpress'); ?></h4>
@@ -669,9 +695,16 @@ function polar_order_information_shortcode($atts)
                         <div class="order-detail-row">
                             <div class="order-detail-item">
                                 <span class="detail-icon">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                        <path
+                                            d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
                                     </svg>
                                 </span>
                                 <div class="detail-content">
@@ -684,7 +717,7 @@ function polar_order_information_shortcode($atts)
             <?php endif; ?>
 
             <!-- Shipping Address Card -->
-            <?php if ($shipping_address && $shipping_address !== __('No shipping address provided', 'pexpress')) : ?>
+            <?php if ($shipping_address && $shipping_address !== __('No shipping address provided', 'pexpress')): ?>
                 <div class="polar-order-item">
                     <div class="order-header">
                         <h4><?php esc_html_e('Shipping Address', 'pexpress'); ?></h4>
@@ -693,9 +726,16 @@ function polar_order_information_shortcode($atts)
                         <div class="order-detail-row">
                             <div class="order-detail-item">
                                 <span class="detail-icon">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                        <path
+                                            d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
                                     </svg>
                                 </span>
                                 <div class="detail-content">
@@ -708,13 +748,13 @@ function polar_order_information_shortcode($atts)
             <?php endif; ?>
 
             <!-- Meeting Information Card -->
-            <?php if ($meeting_type || $meeting_location || $meeting_datetime_display) : ?>
+            <?php if ($meeting_type || $meeting_location || $meeting_datetime_display): ?>
                 <div class="polar-order-item">
                     <div class="order-header">
                         <h4><?php esc_html_e('Meeting Information', 'pexpress'); ?></h4>
                     </div>
                     <div class="order-details">
-                        <?php if ($meeting_type) : ?>
+                        <?php if ($meeting_type): ?>
                             <div class="order-detail-row">
                                 <div class="order-detail-item">
                                     <span class="detail-label"><?php esc_html_e('Meeting Type', 'pexpress'); ?></span>
@@ -732,7 +772,7 @@ function polar_order_information_shortcode($atts)
                                 </div>
                             </div>
                         <?php endif; ?>
-                        <?php if ($meeting_location) : ?>
+                        <?php if ($meeting_location): ?>
                             <div class="order-detail-row">
                                 <div class="order-detail-item">
                                     <span class="detail-label"><?php esc_html_e('Meeting Location', 'pexpress'); ?></span>
@@ -740,7 +780,7 @@ function polar_order_information_shortcode($atts)
                                 </div>
                             </div>
                         <?php endif; ?>
-                        <?php if ($meeting_datetime_display) : ?>
+                        <?php if ($meeting_datetime_display): ?>
                             <div class="order-detail-row">
                                 <div class="order-detail-item">
                                     <span class="detail-label"><?php esc_html_e('Meeting Date & Time', 'pexpress'); ?></span>
@@ -753,13 +793,13 @@ function polar_order_information_shortcode($atts)
             <?php endif; ?>
 
             <!-- Order Items Card -->
-            <?php if (!empty($order_items)) : ?>
+            <?php if (!empty($order_items)): ?>
                 <div class="polar-order-item">
                     <div class="order-header">
                         <h4><?php esc_html_e('Order Items', 'pexpress'); ?></h4>
                     </div>
                     <div class="order-items-list">
-                        <table class="polar-order-items-table">
+                        <table class="polar-table polar-table-striped">
                             <thead>
                                 <tr>
                                     <th><?php esc_html_e('Product', 'pexpress'); ?></th>
@@ -769,7 +809,7 @@ function polar_order_information_shortcode($atts)
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($order_items as $item_id => $item) : ?>
+                                <?php foreach ($order_items as $item_id => $item): ?>
                                     <?php
                                     $product = $item->get_product();
                                     $product_name = $item->get_name();
@@ -799,7 +839,8 @@ function polar_order_information_shortcode($atts)
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" class="text-right"><strong><?php esc_html_e('Order Total', 'pexpress'); ?>:</strong></td>
+                                    <td colspan="3" class="text-right">
+                                        <strong><?php esc_html_e('Order Total', 'pexpress'); ?>:</strong></td>
                                     <td><strong><?php echo wp_kses_post($order_total); ?></strong></td>
                                 </tr>
                             </tfoot>
@@ -809,7 +850,7 @@ function polar_order_information_shortcode($atts)
             <?php endif; ?>
         </div>
     </div>
-<?php
+    <?php
     return ob_get_clean();
 }
 

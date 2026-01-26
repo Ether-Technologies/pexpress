@@ -411,6 +411,31 @@ class PExpress_Email
     }
 
     /**
+     * Check if email is auto-generated from phone number
+     *
+     * @param string $email Email address to check.
+     * @return bool True if email is auto-generated, false otherwise.
+     */
+    private static function is_auto_generated_email($email)
+    {
+        if (empty($email)) {
+            return false;
+        }
+
+        $domain = parse_url(home_url(), PHP_URL_HOST);
+        if (empty($domain)) {
+            return false;
+        }
+
+        // Pattern: phone@domain or phone_counter@domain or phone_timestamp@domain
+        // Phone is 11 digits starting with 01 (e.g., 01712345678)
+        // Optional suffix: _ followed by digits (counter or timestamp)
+        $pattern = '/^01[3-9][0-9]{8}(_\d+)?@' . preg_quote($domain, '/') . '$/';
+        
+        return (bool) preg_match($pattern, $email);
+    }
+
+    /**
      * Send notification email
      *
      * @param string $template_key Template key.
@@ -426,6 +451,7 @@ class PExpress_Email
         }
 
         // Get recipient email
+        $order = null;
         if (empty($to) && isset($data['order_id'])) {
             $order = wc_get_order($data['order_id']);
             if ($order) {
@@ -437,15 +463,21 @@ class PExpress_Email
             return new WP_Error('no_email', __('No email address available.', 'pexpress'));
         }
 
+        // Check if email is auto-generated
+        // If billing_email is auto-generated, it means customer didn't provide a real email during checkout
+        // Skip sending email notifications for auto-generated emails
+        if (self::is_auto_generated_email($to)) {
+            return new WP_Error('auto_generated_email', __('Email notification skipped for auto-generated email address.', 'pexpress'));
+        }
+
         // Get template
         $template = self::get_template($template_key);
         if (empty($template)) {
             return new WP_Error('no_template', __('Email template not found.', 'pexpress'));
         }
 
-        // Get order object if order_id is provided
-        $order = null;
-        if (isset($data['order_id'])) {
+        // Get order object if order_id is provided (for template processing)
+        if (!$order && isset($data['order_id'])) {
             $order = wc_get_order($data['order_id']);
         }
 
