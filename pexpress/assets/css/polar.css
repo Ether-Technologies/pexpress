@@ -441,6 +441,9 @@ body.polar-order-edit-page #wpbody-content {
 .polar-btn-success { background: var(--polar-success); color: white; }
 .polar-btn-success:hover { background: #059669; }
 
+.polar-btn-danger { background: #d63638; color: white; border-color: #d63638; }
+.polar-btn-danger:hover { background: #b32d2e; color: white; }
+
 /* Action Cards */
 .polar-order-actions-card .order-actions-body {
   padding: var(--polar-space-lg);

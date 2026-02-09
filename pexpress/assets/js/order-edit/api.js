@@ -216,6 +216,45 @@
                 },
                 complete: callbacks.onComplete
             });
+        },
+
+        /**
+         * Cancel order with reason
+         * @param {number} orderId - Order ID
+         * @param {string} nonce - Security nonce
+         * @param {string} reason - Cancellation reason
+         * @param {Object} callbacks - Callback functions
+         * @returns {jqXHR}
+         */
+        cancelOrder: function (orderId, nonce, reason, callbacks) {
+            return $.ajax({
+                url: window.polarOrderEdit.ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'polar_cancel_order',
+                    nonce: nonce,
+                    order_id: orderId,
+                    reason: reason
+                },
+                success: function (response) {
+                    if (response && response.success) {
+                        if (typeof callbacks.onSuccess === 'function') {
+                            callbacks.onSuccess(response);
+                        }
+                    } else {
+                        if (typeof callbacks.onError === 'function') {
+                            callbacks.onError(response);
+                        }
+                    }
+                },
+                error: function () {
+                    if (typeof callbacks.onError === 'function') {
+                        callbacks.onError({ data: { message: 'Unable to cancel order.' } });
+                    }
+                },
+                complete: callbacks.onComplete
+            });
         }
     };
 

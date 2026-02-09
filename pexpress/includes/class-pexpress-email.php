@@ -294,6 +294,7 @@ class PExpress_Email
             'order_items_text' => $items_text,
             'order_notes_html' => $notes_html,
             'order_notes_text' => $notes_text,
+            'cancellation_reason' => PExpress_Core::get_order_meta($order->get_id(), '_polar_cancel_reason') ?: '',
         );
     }
 
@@ -358,6 +359,7 @@ class PExpress_Email
             '{{order_items_text}}' => isset($all_data['order_items_text']) ? $all_data['order_items_text'] : '',
             '{{order_notes}}' => isset($all_data['order_notes_html']) ? $all_data['order_notes_html'] : '',
             '{{order_notes_text}}' => isset($all_data['order_notes_text']) ? $all_data['order_notes_text'] : '',
+            '{{cancellation_reason}}' => isset($all_data['cancellation_reason']) ? $all_data['cancellation_reason'] : '',
         );
 
         $message = $template;
@@ -385,6 +387,8 @@ class PExpress_Email
             'order_proceeded' => __('Your order #{{order_id}} is now being processed. We will update you soon.', 'pexpress'),
             'out_for_delivery' => __('Your order #{{order_id}} is out for delivery. You will receive it shortly.', 'pexpress'),
             'order_completed' => __('Your order #{{order_id}} has been completed. Thank you for choosing us!', 'pexpress'),
+            'order_placed' => __('We have received your order #{{order_id}}. Thank you! We will confirm shortly.', 'pexpress'),
+            'order_cancelled' => __('Your order #{{order_id}} has been cancelled. Reason: {{cancellation_reason}}', 'pexpress'),
         );
 
         if (isset($email_templates[$template_key]['template'])) {

@@ -15,6 +15,7 @@
         init: function () {
             this.bindConfirmEvent();
             this.bindCompleteEvent();
+            this.bindCancelEvent();
         },
 
         /**
@@ -119,6 +120,83 @@
                         }
                     });
                 });
+        },
+
+        /**
+         * Bind cancel order event and reason modal
+         */
+        bindCancelEvent: function () {
+            const $modal = $('#polar-cancel-reason-modal');
+            const $input = $('#polar-cancel-reason-input');
+            const $submit = $modal.find('.polar-cancel-reason-submit');
+            const $cancelBtn = $modal.find('.polar-cancel-reason-cancel');
+
+            $(document)
+                .off('click.polarCancel', '.polar-cancel-order')
+                .on('click.polarCancel', '.polar-cancel-order', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const $btn = $(this);
+                    $modal.data('cancel-order-id', $btn.data('order-id')).data('cancel-nonce', $btn.data('nonce'));
+                    $input.val('');
+                    $modal.css('display', 'flex').attr('aria-hidden', 'false');
+                });
+
+            $cancelBtn.on('click', function () {
+                $modal.css('display', 'none').attr('aria-hidden', 'true');
+                $input.val('');
+            });
+
+            $modal.on('click', function (e) {
+                if (e.target === e.currentTarget) {
+                    $modal.css('display', 'none').attr('aria-hidden', 'true');
+                    $input.val('');
+                }
+            });
+
+            $submit.on('click', function () {
+                const reason = $input.val().trim();
+                if (!reason) {
+                    return;
+                }
+                const orderId = parseInt($modal.data('cancel-order-id'), 10);
+                const nonce = $modal.data('cancel-nonce');
+                if (!orderId || !nonce) {
+                    return;
+                }
+                const $feedback = $('.polar-action-feedback');
+                const $wrap = $('.polar-cancel-order-wrap');
+
+                $submit.prop('disabled', true);
+                $feedback.removeClass('is-error is-success').text('Cancelling order...');
+
+                API.cancelOrder(orderId, nonce, reason, {
+                    onSuccess: function (response) {
+                        $modal.css('display', 'none').attr('aria-hidden', 'true');
+                        $input.val('');
+                        $feedback.addClass('is-success').text((response.data && response.data.message) || 'Order cancelled successfully.');
+                        if ($wrap.length) {
+                            $wrap.replaceWith('<p class="polar-action-status polar-action-cancelled" style="margin-top: 10px;"><span class="dashicons dashicons-warning" style="color: #d63638;"></span> Order Cancelled</p>');
+                        }
+                        const $statusBadge = $('.order-status');
+                        if ($statusBadge.length) {
+                            $statusBadge.removeClass().addClass('order-status status-cancelled').text('Cancelled');
+                        }
+                        setTimeout(function () {
+                            $feedback.removeClass('is-success').text('');
+                        }, 3000);
+                    },
+                    onError: function (response) {
+                        const message = (response && response.data && response.data.message)
+                            ? response.data.message
+                            : 'Unable to cancel order. Please try again.';
+                        $feedback.addClass('is-error').text(message);
+                    },
+                    onComplete: function () {
+                        $submit.prop('disabled', false);
+                    }
+                });
+            });
         }
     };
 

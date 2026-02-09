@@ -106,6 +106,44 @@ class PExpress_Admin_Settings_Templates
             array('template_key' => 'order_completed')
         );
 
+        // Order Placed Email Template
+        add_settings_field(
+            'pexpress_email_order_placed_enable',
+            __('Order Placed Email Alert', 'pexpress'),
+            array($this, 'render_email_template_enable_field'),
+            'polar-express-settings',
+            'pexpress_email_templates_section',
+            array('template_key' => 'order_placed')
+        );
+
+        add_settings_field(
+            'pexpress_email_order_placed_template',
+            __('Order Placed Email Template', 'pexpress'),
+            array($this, 'render_email_template_field'),
+            'polar-express-settings',
+            'pexpress_email_templates_section',
+            array('template_key' => 'order_placed')
+        );
+
+        // Order Cancelled Email Template
+        add_settings_field(
+            'pexpress_email_order_cancelled_enable',
+            __('Order Cancelled Email Alert', 'pexpress'),
+            array($this, 'render_email_template_enable_field'),
+            'polar-express-settings',
+            'pexpress_email_templates_section',
+            array('template_key' => 'order_cancelled')
+        );
+
+        add_settings_field(
+            'pexpress_email_order_cancelled_template',
+            __('Order Cancelled Email Template', 'pexpress'),
+            array($this, 'render_email_template_field'),
+            'polar-express-settings',
+            'pexpress_email_templates_section',
+            array('template_key' => 'order_cancelled')
+        );
+
         // SMS Templates Section
         add_settings_section(
             'pexpress_sms_templates_section',
@@ -189,6 +227,44 @@ class PExpress_Admin_Settings_Templates
             'pexpress_sms_templates_section',
             array('template_key' => 'order_completed')
         );
+
+        // Order Placed SMS Template
+        add_settings_field(
+            'pexpress_order_placed_enable',
+            __('Order Placed Alert', 'pexpress'),
+            array($this, 'render_template_enable_field'),
+            'polar-express-settings',
+            'pexpress_sms_templates_section',
+            array('template_key' => 'order_placed')
+        );
+
+        add_settings_field(
+            'pexpress_order_placed_template',
+            __('Order Placed Template', 'pexpress'),
+            array($this, 'render_template_field'),
+            'polar-express-settings',
+            'pexpress_sms_templates_section',
+            array('template_key' => 'order_placed')
+        );
+
+        // Order Cancelled SMS Template
+        add_settings_field(
+            'pexpress_order_cancelled_enable',
+            __('Order Cancelled Alert', 'pexpress'),
+            array($this, 'render_template_enable_field'),
+            'polar-express-settings',
+            'pexpress_sms_templates_section',
+            array('template_key' => 'order_cancelled')
+        );
+
+        add_settings_field(
+            'pexpress_order_cancelled_template',
+            __('Order Cancelled Template', 'pexpress'),
+            array($this, 'render_template_field'),
+            'polar-express-settings',
+            'pexpress_sms_templates_section',
+            array('template_key' => 'order_cancelled')
+        );
     }
 
     /**
@@ -244,7 +320,7 @@ class PExpress_Admin_Settings_Templates
     public function render_email_templates_section()
     {
         $this->email_templates_section_callback();
-        $template_keys = array('order_confirmed', 'order_proceeded', 'out_for_delivery', 'order_completed');
+        $template_keys = array('order_confirmed', 'order_proceeded', 'out_for_delivery', 'order_completed', 'order_placed', 'order_cancelled');
 
         foreach ($template_keys as $template_key) {
             echo '<div class="polar-task-item" style="margin: 0 0 24px 0; padding: 24px; background: #fff; border: 2px solid #f0f0f1; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;">';
@@ -265,7 +341,7 @@ class PExpress_Admin_Settings_Templates
     public function render_sms_templates_section()
     {
         $this->sms_templates_section_callback();
-        $template_keys = array('order_confirmed', 'order_proceeded', 'out_for_delivery', 'order_completed');
+        $template_keys = array('order_confirmed', 'order_proceeded', 'out_for_delivery', 'order_completed', 'order_placed', 'order_cancelled');
 
         foreach ($template_keys as $template_key) {
             echo '<div class="polar-task-item" style="margin: 0 0 24px 0; padding: 24px; background: #fff; border: 2px solid #f0f0f1; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;">';
@@ -405,6 +481,38 @@ class PExpress_Admin_Settings_Templates
 
 <p style="margin-top: 30px;">' . __('We hope you enjoy your purchase!', 'pexpress') . '</p>
 <p>' . __('Thank you for your business!', 'pexpress') . '</p>',
+            'order_placed' => '<h2 style="color: #2271b1; margin-top: 0;">' . __('Order Placed', 'pexpress') . '</h2>
+<p>Dear {{customer_name}},</p>
+<p>Thank you for your order! We have received order #{{order_number}}.</p>
+
+<h3 style="color: #1d2327; margin-top: 25px;">' . __('Order Details', 'pexpress') . '</h3>
+<p><strong>' . __('Order Number:', 'pexpress') . '</strong> #{{order_number}}<br>
+<strong>' . __('Order Date:', 'pexpress') . '</strong> {{order_date}}<br>
+<strong>' . __('Order Status:', 'pexpress') . '</strong> {{order_status}}</p>
+
+{{order_items}}
+
+<h3 style="color: #1d2327; margin-top: 25px;">' . __('Order Summary', 'pexpress') . '</h3>
+<table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>' . __('Total:', 'pexpress') . '</strong></td>
+        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;"><strong>{{order_total}}</strong></td>
+    </tr>
+</table>
+
+<p style="margin-top: 30px;">' . __('We will confirm your order and keep you updated.', 'pexpress') . '</p>
+<p>' . __('Thank you for choosing us!', 'pexpress') . '</p>',
+            'order_cancelled' => '<h2 style="color: #d63638; margin-top: 0;">' . __('Order Cancelled', 'pexpress') . '</h2>
+<p>Dear {{customer_name}},</p>
+<p>Your order #{{order_number}} has been cancelled.</p>
+
+<h3 style="color: #1d2327; margin-top: 25px;">' . __('Order Details', 'pexpress') . '</h3>
+<p><strong>' . __('Order Number:', 'pexpress') . '</strong> #{{order_number}}<br>
+<strong>' . __('Order Date:', 'pexpress') . '</strong> {{order_date}}</p>
+
+<p style="margin-top: 20px;"><strong>' . __('Reason for cancellation:', 'pexpress') . '</strong><br>{{cancellation_reason}}</p>
+
+<p style="margin-top: 30px;">' . __('If you have any questions, please contact us.', 'pexpress') . '</p>',
         );
 
         $template = isset($options['email_templates'][$template_key]['template']) ? $options['email_templates'][$template_key]['template'] : (isset($default_templates[$template_key]) ? $default_templates[$template_key] : '');
@@ -446,6 +554,8 @@ class PExpress_Admin_Settings_Templates
             'order_proceeded' => __('Your order #{{order_id}} is now being processed. We will update you soon.', 'pexpress'),
             'out_for_delivery' => __('Your order #{{order_id}} is out for delivery. You will receive it shortly.', 'pexpress'),
             'order_completed' => __('Your order #{{order_id}} has been completed. Thank you for choosing us!', 'pexpress'),
+            'order_placed' => __('We have received your order #{{order_id}}. Thank you! We will confirm shortly.', 'pexpress'),
+            'order_cancelled' => __('Your order #{{order_id}} has been cancelled. Reason: {{cancellation_reason}}', 'pexpress'),
         );
 
         $template = isset($options['sms_templates'][$template_key]['template']) ? $options['sms_templates'][$template_key]['template'] : (isset($default_templates[$template_key]) ? $default_templates[$template_key] : '');
@@ -453,7 +563,7 @@ class PExpress_Admin_Settings_Templates
         echo '<div class="pexpress-form-field-wrapper">';
         echo '<label for="pexpress_' . esc_attr($template_key) . '_template" style="display: block; font-weight: 600; color: #1d2327; margin-bottom: 8px; font-size: 14px;">' . esc_html__('SMS Template', 'pexpress') . '</label>';
         echo '<textarea id="pexpress_' . esc_attr($template_key) . '_template" name="pexpress_options[sms_templates][' . esc_attr($template_key) . '][template]" rows="4" style="width: 100%; padding: 16px; border: 2px solid #dcdcde; border-radius: 8px; font-size: 14px; line-height: 1.6; transition: all 0.2s ease; background: #fff; color: #1d2327; box-sizing: border-box; resize: vertical;">' . esc_textarea($template) . '</textarea>';
-        echo '<p class="description" style="margin-top: 8px; color: #646970; font-size: 13px; line-height: 1.5;">' . esc_html__('Available placeholders: {{order_id}}, {{customer_name}}, {{order_total}}, {{order_date}}', 'pexpress') . '</p>';
+        echo '<p class="description" style="margin-top: 8px; color: #646970; font-size: 13px; line-height: 1.5;">' . esc_html__('Available placeholders: {{order_id}}, {{customer_name}}, {{order_total}}, {{order_date}}, {{cancellation_reason}} (Order Cancelled only)', 'pexpress') . '</p>';
         echo '</div>';
     }
 }

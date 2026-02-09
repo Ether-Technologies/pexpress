@@ -177,6 +177,7 @@ class PExpress
         add_action('wp_ajax_polar_confirm_order', array($this, 'ajax_confirm_order'));
         add_action('wp_ajax_polar_proceed_order', array($this, 'ajax_proceed_order'));
         add_action('wp_ajax_polar_complete_order', array($this, 'ajax_complete_order'));
+        add_action('wp_ajax_polar_cancel_order', array($this, 'ajax_cancel_order'));
 
         // Plugin action links
         add_filter('plugin_action_links_' . PEXPRESS_PLUGIN_BASENAME, array($this, 'plugin_action_links'));
@@ -185,6 +186,10 @@ class PExpress
         if (is_admin() && !wp_doing_ajax()) {
             add_action('admin_init', array($this, 'maybe_redirect_to_setup'));
         }
+
+        // Order placed notification (send once per order)
+        add_action('woocommerce_checkout_order_processed', array($this, 'on_order_placed'), 20, 3);
+        add_action('woocommerce_new_order', array($this, 'on_order_placed_new_order'), 20, 2);
 
         // Hook into wp_mail to log all emails
         add_action('phpmailer_init', array($this, 'log_wp_mail_emails'), 999);
@@ -1432,6 +1437,91 @@ class PExpress
                 'email' => !is_wp_error($results['email']) && $results['email'] !== false,
             ),
         ));
+    }
+
+    /**
+     * AJAX handler for cancel order
+     */
+    public function ajax_cancel_order()
+    {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'polar_cancel_order')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'pexpress')));
+        }
+
+        $current_user = wp_get_current_user();
+        if (!in_array('polar_support', $current_user->roles) && !current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => __('You do not have permission to perform this action.', 'pexpress')));
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+        if (!$order_id) {
+            wp_send_json_error(array('message' => __('Invalid order ID.', 'pexpress')));
+        }
+
+        $reason = isset($_POST['reason']) ? sanitize_textarea_field(wp_unslash($_POST['reason'])) : '';
+        if (trim($reason) === '') {
+            wp_send_json_error(array('message' => __('Please provide a reason for cancellation.', 'pexpress')));
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(array('message' => __('Order not found.', 'pexpress')));
+        }
+
+        PExpress_Core::update_order_meta($order_id, '_polar_cancel_reason', $reason);
+        PExpress_Core::update_order_meta($order_id, '_polar_order_cancelled', current_time('mysql'));
+        PExpress_Core::update_order_meta($order_id, '_polar_order_cancelled_by', $current_user->ID);
+
+        $order->update_status('cancelled', __('Order cancelled by support.', 'pexpress'));
+
+        $results = polar_send_order_notification($order_id, 'order_cancelled');
+
+        wp_send_json_success(array(
+            'message' => __('Order cancelled successfully.', 'pexpress'),
+            'notifications' => array(
+                'sms' => !is_wp_error($results['sms']) && $results['sms'] !== false,
+                'email' => !is_wp_error($results['email']) && $results['email'] !== false,
+            ),
+        ));
+    }
+
+    /**
+     * Send Order Placed notification when a new order is created (once per order).
+     *
+     * @param int      $order_id   Order ID.
+     * @param array    $posted_data Posted checkout data (unused).
+     * @param WC_Order $order      Order object.
+     */
+    public function on_order_placed($order_id, $posted_data = array(), $order = null)
+    {
+        if (!$order_id || !function_exists('polar_send_order_notification')) {
+            return;
+        }
+        if (PExpress_Core::get_order_meta($order_id, '_polar_order_placed_sent')) {
+            return;
+        }
+        $order = $order ? $order : wc_get_order($order_id);
+        if (!$order || !is_a($order, 'WC_Order')) {
+            return;
+        }
+        $status = $order->get_status();
+        if (in_array($status, array('failed', 'cancelled'), true)) {
+            return;
+        }
+        polar_send_order_notification($order_id, 'order_placed');
+        PExpress_Core::update_order_meta($order_id, '_polar_order_placed_sent', current_time('mysql'));
+    }
+
+    /**
+     * Hook: woocommerce_new_order (catches orders created outside checkout, e.g. admin).
+     * Delegates to on_order_placed; duplicate guard prevents double send.
+     *
+     * @param int      $order_id Order ID.
+     * @param WC_Order $order    Order object (optional depending on WC version).
+     */
+    public function on_order_placed_new_order($order_id, $order = null)
+    {
+        $this->on_order_placed($order_id, array(), $order);
     }
 
     /**

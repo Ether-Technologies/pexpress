@@ -131,8 +131,11 @@ function polar_send_assignment_sms($order_id, $role, $user_id)
         return new WP_Error('order_not_found', __('Order not found.', 'pexpress'));
     }
 
-    // Get customer phone
+    // Get customer phone (order billing first, then logged-in user's billing_phone)
     $phone = $order->get_billing_phone();
+    if (empty($phone) && $order->get_customer_id()) {
+        $phone = get_user_meta($order->get_customer_id(), 'billing_phone', true);
+    }
     if (empty($phone)) {
         return new WP_Error('phone_not_available', __('Customer phone is not available.', 'pexpress'));
     }
@@ -178,6 +181,8 @@ function polar_process_sms_template($template_key, $data)
         'order_proceeded' => __('Your order #{{order_id}} is now being processed. We will update you soon.', 'pexpress'),
         'out_for_delivery' => __('Your order #{{order_id}} is out for delivery. You will receive it shortly.', 'pexpress'),
         'order_completed' => __('Your order #{{order_id}} has been completed. Thank you for choosing us!', 'pexpress'),
+        'order_placed' => __('We have received your order #{{order_id}}. Thank you! We will confirm shortly.', 'pexpress'),
+        'order_cancelled' => __('Your order #{{order_id}} has been cancelled. Reason: {{cancellation_reason}}', 'pexpress'),
     );
 
     if (isset($sms_templates[$template_key]['template'])) {
@@ -193,6 +198,7 @@ function polar_process_sms_template($template_key, $data)
         '{{customer_name}}' => isset($data['customer_name']) ? $data['customer_name'] : '',
         '{{order_total}}' => isset($data['order_total']) ? $data['order_total'] : '',
         '{{order_date}}' => isset($data['order_date']) ? $data['order_date'] : '',
+        '{{cancellation_reason}}' => isset($data['cancellation_reason']) ? $data['cancellation_reason'] : '',
     );
 
     $message = $template;
@@ -245,6 +251,7 @@ function polar_send_order_notification($order_id, $template_key)
         'customer_name' => $customer_name,
         'order_total' => $order_total,
         'order_date' => $order_date,
+        'cancellation_reason' => PExpress_Core::get_order_meta($order_id, '_polar_cancel_reason') ?: '',
     );
 
     $results = array('sms' => false, 'email' => false);
@@ -264,6 +271,9 @@ function polar_send_order_notification($order_id, $template_key)
     // Send SMS
     if (polar_is_sms_template_enabled($template_key)) {
         $phone = $order->get_billing_phone();
+        if (empty($phone) && $order->get_customer_id()) {
+            $phone = get_user_meta($order->get_customer_id(), 'billing_phone', true);
+        }
         if (!empty($phone)) {
             $message = polar_process_sms_template($template_key, $data);
             if (!empty($message)) {
@@ -278,7 +288,7 @@ function polar_send_order_notification($order_id, $template_key)
             }
         } else {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Polar Express SMS Debug - No phone number for order #' . $order_id);
+                error_log('Polar Express SMS Debug - No phone number for order #' . $order_id . ' (billing or user meta)');
             }
         }
     } else {

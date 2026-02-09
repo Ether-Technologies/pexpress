@@ -658,6 +658,36 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 <?php esc_html_e('Order Completed', 'pexpress'); ?>
                             </p>
                         <?php endif; ?>
+
+                        <?php
+                        $can_cancel = $order_status !== 'cancelled' && $order_status !== 'completed';
+                        ?>
+                        <?php if ($can_cancel): ?>
+                            <div class="polar-cancel-order-wrap" style="margin-top: 10px;">
+                                <button type="button" class="polar-btn polar-btn-danger polar-cancel-order"
+                                    data-order-id="<?php echo esc_attr($order_id); ?>"
+                                    data-nonce="<?php echo esc_attr(wp_create_nonce('polar_cancel_order')); ?>">
+                                    <span class="dashicons dashicons-no-alt" style="font-size: 16px; width: 16px; height: 16px;"></span>
+                                    <?php esc_html_e('Cancel Order', 'pexpress'); ?>
+                                </button>
+                            </div>
+                            <div class="polar-cancel-reason-modal" id="polar-cancel-reason-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
+                                <div class="polar-cancel-reason-box" style="background: #fff; padding: 24px; border-radius: 8px; max-width: 420px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                                    <h3 style="margin: 0 0 12px 0;"><?php esc_html_e('Cancel Order', 'pexpress'); ?></h3>
+                                    <p style="margin: 0 0 12px 0; color: #646970;"><?php esc_html_e('Please provide a reason for cancelling this order.', 'pexpress'); ?></p>
+                                    <textarea id="polar-cancel-reason-input" rows="4" class="polar-textarea" style="width: 100%; margin-bottom: 16px; padding: 10px;" placeholder="<?php esc_attr_e('Reason for cancellation...', 'pexpress'); ?>"></textarea>
+                                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                        <button type="button" class="button polar-cancel-reason-cancel"><?php esc_html_e('Cancel', 'pexpress'); ?></button>
+                                        <button type="button" class="button button-primary polar-cancel-reason-submit"><?php esc_html_e('Submit', 'pexpress'); ?></button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php elseif ($order_status === 'cancelled'): ?>
+                            <p class="polar-action-status polar-action-cancelled" style="margin-top: 10px;">
+                                <span class="dashicons dashicons-warning" style="color: #d63638;"></span>
+                                <?php esc_html_e('Order Cancelled', 'pexpress'); ?>
+                            </p>
+                        <?php endif; ?>
                         <span class="polar-action-feedback" role="status" aria-live="polite"></span>
                     </div>
                 </div>
