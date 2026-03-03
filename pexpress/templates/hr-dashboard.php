@@ -66,7 +66,7 @@ $distributor_count = count($distributor_users);
             </div>
             <div class="stat-card-content">
                 <h3 class="stat-card-value"><?php echo esc_html($fridge_count); ?></h3>
-                <p class="stat-card-label"><?php esc_html_e('Fridge Providers', 'pexpress'); ?></p>
+                <p class="stat-card-label"><?php esc_html_e('Fridge Dept (FSD)', 'pexpress'); ?></p>
             </div>
         </div>
         <div class="polar-stat-card stat-card-info">
@@ -109,12 +109,23 @@ $distributor_count = count($distributor_users);
                             $meeting_datetime_value = $meeting_datetime;
                         }
                     }
+                    $meeting_datetime_display = '';
+                    if (!empty($meeting_datetime)) {
+                        $meeting_ts = strtotime($meeting_datetime);
+                        $meeting_datetime_display = $meeting_ts ? date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $meeting_ts) : $meeting_datetime;
+                    }
                     $fridge_asset_id = PExpress_Core::get_fridge_asset_id($order_id);
                     $fridge_return_date = PExpress_Core::get_order_meta($order_id, '_polar_fridge_return_date');
+                    $fridge_return_datetime_value = '';
                     if (!empty($fridge_return_date)) {
                         $fridge_timestamp = strtotime($fridge_return_date);
                         if ($fridge_timestamp) {
-                            $fridge_return_date = gmdate('Y-m-d', $fridge_timestamp);
+                            // Support both date-only and datetime: prefill datetime-local as Y-m-d\TH:i
+                            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($fridge_return_date))) {
+                                $fridge_return_datetime_value = gmdate('Y-m-d', $fridge_timestamp) . 'T00:00';
+                            } else {
+                                $fridge_return_datetime_value = gmdate('Y-m-d\TH:i', $fridge_timestamp);
+                            }
                         }
                     }
                     $delivery_instructions = PExpress_Core::get_role_instructions($order_id, 'delivery');
@@ -196,6 +207,40 @@ $distributor_count = count($distributor_users);
                                     </div>
                                 </div>
                             </div>
+                            <?php if ($meeting_datetime_display || $meeting_type || $meeting_location) : ?>
+                            <div class="order-detail-row">
+                                <?php if ($meeting_datetime_display) : ?>
+                                <div class="order-detail-item">
+                                    <span class="detail-icon">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </span>
+                                    <div class="detail-content">
+                                        <span class="detail-label"><?php esc_html_e('Event Date & Time', 'pexpress'); ?></span>
+                                        <span class="detail-value"><?php echo esc_html($meeting_datetime_display); ?></span>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($meeting_type) : ?>
+                                <div class="order-detail-item">
+                                    <div class="detail-content">
+                                        <span class="detail-label"><?php esc_html_e('Meeting Type', 'pexpress'); ?></span>
+                                        <span class="detail-value"><?php echo esc_html($meeting_type === 'meet_point' ? __('Meet Point', 'pexpress') : ($meeting_type === 'delivery_location' ? __('Delivery Location', 'pexpress') : $meeting_type)); ?></span>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($meeting_location) : ?>
+                                <div class="order-detail-item order-detail-full">
+                                    <div class="detail-content">
+                                        <span class="detail-label"><?php esc_html_e('Meeting Location', 'pexpress'); ?></span>
+                                        <span class="detail-value"><?php echo esc_html($meeting_location); ?></span>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                         </div>
                         <div class="assignment-form">
                             <form class="polar-assign-form" method="post" data-order-id="<?php echo esc_attr($order_id); ?>">
@@ -268,8 +313,8 @@ $distributor_count = count($distributor_users);
 
                                 <div class="assign-row">
                                     <div class="assign-field">
-                                        <label><?php esc_html_e('Fridge Return Date:', 'pexpress'); ?></label>
-                                        <input type="date" name="fridge_return_date" class="polar-input" value="<?php echo esc_attr($fridge_return_date); ?>">
+                                        <label><?php esc_html_e('Fridge Return Date & Time:', 'pexpress'); ?></label>
+                                        <input type="datetime-local" name="fridge_return_date" class="polar-input" value="<?php echo esc_attr($fridge_return_datetime_value); ?>">
                                     </div>
                                     <div class="assign-field">
                                         <label><?php esc_html_e('Fridge Asset ID:', 'pexpress'); ?></label>
@@ -405,9 +450,9 @@ $distributor_count = count($distributor_users);
 
                     // Prepare history data for modal
                     $roles = array(
-                        'agency' => __('Agency', 'pexpress'),
+                        'agency' => __('Distribution', 'pexpress'),
                         'delivery' => __('SR', 'pexpress'),
-                        'fridge' => __('Fridge', 'pexpress'),
+                        'fridge' => __('Fridge Dept (FSD)', 'pexpress'),
                         'distributor' => __('Product Provider', 'pexpress'),
                     );
                     $history_data = array();
@@ -434,7 +479,7 @@ $distributor_count = count($distributor_users);
                         <div class="polar-history-card-body">
                             <div class="polar-status-row">
                                 <div class="polar-status-item">
-                                    <span class="polar-status-label"><?php esc_html_e('Agency', 'pexpress'); ?></span>
+                                    <span class="polar-status-label"><?php esc_html_e('Distribution', 'pexpress'); ?></span>
                                     <span class="status-chip status-<?php echo esc_attr($agency_status); ?>"><?php echo esc_html($status_labels['agency'][$agency_status] ?? $agency_status); ?></span>
                                 </div>
                                 <div class="polar-status-item">
@@ -449,7 +494,7 @@ $distributor_count = count($distributor_users);
                             </div>
                             <div class="polar-status-row">
                                 <div class="polar-status-item">
-                                    <span class="polar-status-label"><?php esc_html_e('Fridge', 'pexpress'); ?></span>
+                                    <span class="polar-status-label"><?php esc_html_e('Fridge Dept (FSD)', 'pexpress'); ?></span>
                                     <?php if ($fridge_id) : ?>
                                         <span class="status-chip status-<?php echo esc_attr($fridge_status); ?>"><?php echo esc_html($status_labels['fridge'][$fridge_status] ?? $fridge_status); ?></span>
                                         <small><?php echo esc_html(get_userdata($fridge_id)->display_name); ?></small>
@@ -472,6 +517,9 @@ $distributor_count = count($distributor_users);
                             <button type="button" class="polar-btn polar-btn-secondary polar-view-history-btn" data-order-id="<?php echo esc_attr($order_id); ?>" data-history='<?php echo esc_attr(wp_json_encode($history_data)); ?>' data-status-labels='<?php echo esc_attr(wp_json_encode($status_labels)); ?>'>
                                 <?php esc_html_e('View Details', 'pexpress'); ?>
                             </button>
+                            <button type="button" class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>">
+                                <?php esc_html_e('View Tracking', 'pexpress'); ?>
+                            </button>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -489,6 +537,22 @@ $distributor_count = count($distributor_users);
                     </div>
                     <div class="polar-modal-body" id="polar-history-modal-body">
                         <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Tracking Modal -->
+            <div id="polar-tracking-modal" class="polar-modal" style="display: none;">
+                <div class="polar-modal-overlay"></div>
+                <div class="polar-modal-content polar-tracking-modal-content">
+                    <div class="polar-modal-header">
+                        <h3><?php esc_html_e('Order Tracking', 'pexpress'); ?> <span id="polar-tracking-order-id"></span></h3>
+                        <button type="button" class="polar-modal-close polar-tracking-modal-close" aria-label="<?php esc_attr_e('Close', 'pexpress'); ?>">
+                            <span class="dashicons dashicons-no-alt"></span>
+                        </button>
+                    </div>
+                    <div class="polar-modal-body" id="polar-tracking-modal-body">
+                        <p class="polar-loading"><?php esc_html_e('Loading tracking...', 'pexpress'); ?></p>
                     </div>
                 </div>
             </div>
@@ -593,6 +657,107 @@ $distributor_count = count($distributor_users);
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape' && $modal.is(':visible')) {
                 closeHistoryModal();
+            }
+        });
+
+        // Order Tracking modal
+        var $trackingModal = $('#polar-tracking-modal');
+        var $trackingModalBody = $('#polar-tracking-modal-body');
+        var $trackingOrderIdSpan = $('#polar-tracking-order-id');
+        var polarTrackingNonce = '<?php echo esc_js(wp_create_nonce('polar_order_tracking_nonce')); ?>';
+        var polarAjaxUrl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+
+        function openTrackingModal(orderId) {
+            $trackingOrderIdSpan.text('#' + orderId);
+            $trackingModalBody.html('<p class="polar-loading"><?php echo esc_js(__('Loading tracking...', 'pexpress')); ?></p>');
+            $trackingModal.fadeIn(300);
+
+            $.post(polarAjaxUrl, {
+                action: 'polar_get_order_tracking',
+                nonce: polarTrackingNonce,
+                order_id: orderId
+            }).done(function(response) {
+                if (response.success && response.data) {
+                    var data = response.data;
+                    var html = '';
+                    if (data.stage_wise && data.stage_wise.length > 0) {
+                        html = '<div class="polar-tracking-modal-statuses polar-stage-wise">';
+                        data.stage_wise.forEach(function(row) {
+                            var statusClass = (row.current_status === 'pending') ? 'pending' : ((row.current_status === 'customer_served' || row.current_status === 'fridge_returned' || row.current_status === 'handoff_complete' || row.current_status === 'assigned' || row.current_status === 'proceeded') ? 'completed' : 'in-progress');
+                            html += '<div class="polar-tracking-status-row polar-status-' + statusClass + '">';
+                            html += '<div class="polar-tracking-stage-info">';
+                            html += '<span class="polar-tracking-stage">' + row.stage_label + '</span>';
+                            html += '<span class="polar-tracking-badge">' + row.status_label + '</span>';
+                            html += '</div>';
+                            html += '<div class="polar-tracking-contact-info">';
+                            if (row.responsible_name) {
+                                html += '<span class="polar-tracking-person">' + row.responsible_name + '</span>';
+                            }
+                            if (row.contact_phone) {
+                                html += ' <a href="tel:' + row.contact_phone.replace(/[^0-9+]/g, '') + '" class="polar-tracking-phone">' + row.contact_phone + '</a>';
+                            }
+                            if (row.last_update_timestamp) {
+                                html += '<span class="polar-tracking-update">' + row.last_update_timestamp;
+                                if (row.last_update_note) {
+                                    html += ' — ' + row.last_update_note;
+                                }
+                                html += '</span>';
+                            }
+                            if (!row.responsible_name && !row.contact_phone && !row.last_update_timestamp) {
+                                html += '<span class="polar-tracking-empty">—</span>';
+                            }
+                            html += '</div></div>';
+                        });
+                        html += '</div>';
+                    } else if (data.statuses) {
+                        var s = data.statuses;
+                        var stageLabels = {
+                            hr: '<?php echo esc_js(__('Distribution', 'pexpress')); ?>',
+                            delivery: '<?php echo esc_js(__('SR', 'pexpress')); ?>',
+                            fridge: '<?php echo esc_js(__('Fridge Dept (FSD)', 'pexpress')); ?>',
+                            distributor: '<?php echo esc_js(__('Product Provider', 'pexpress')); ?>'
+                        };
+                        html = '<div class="polar-tracking-modal-statuses">';
+                        ['hr', 'delivery', 'fridge', 'distributor'].forEach(function(key) {
+                            if (s[key]) {
+                                var stageLabel = stageLabels[key] || key;
+                                var userName = s[key].user_name ? ' <small>(' + s[key].user_name + ')</small>' : '';
+                                html += '<div class="polar-tracking-status-row polar-status-' + (s[key].class || 'pending') + '">';
+                                html += '<span class="polar-tracking-stage">' + stageLabel + '</span>';
+                                html += '<span class="polar-tracking-badge">' + (s[key].label || s[key].status) + '</span>' + userName;
+                                html += '</div>';
+                            }
+                        });
+                        html += '</div>';
+                    }
+                    if (html) {
+                        $trackingModalBody.html(html);
+                    } else {
+                        $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+                    }
+                } else {
+                    $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+                }
+            }).fail(function() {
+                $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+            });
+        }
+
+        function closeTrackingModal() {
+            $trackingModal.fadeOut(300);
+        }
+
+        $(document).on('click', '.polar-view-tracking-btn', function() {
+            var orderId = $(this).data('order-id');
+            if (orderId) {
+                openTrackingModal(orderId);
+            }
+        });
+
+        $trackingModal.find('.polar-modal-close, .polar-modal-overlay').on('click', closeTrackingModal);
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $trackingModal.is(':visible')) {
+                closeTrackingModal();
             }
         });
     });

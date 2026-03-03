@@ -724,7 +724,7 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                 </div>
             </div>
 
-            <!-- Forward to HR -->
+            <!-- Forward to Distribution -->
             <div class="polar-order-item polar-forward-card">
                 <div class="order-header">
                     <h4><?php esc_html_e('Forward to SR', 'pexpress'); ?></h4>
@@ -896,7 +896,7 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                         <path d="M5 13L12 20L19 13M12 4V20" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                    <?php esc_html_e('Fridge:', 'pexpress'); ?>
+                                    <?php esc_html_e('Fridge Dept (FSD):', 'pexpress'); ?>
                                     <?php echo esc_html($fridge_user ? $fridge_user->display_name : 'N/A'); ?>
                                 </span>
                             <?php endif; ?>
@@ -915,6 +915,53 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                             <?php endif; ?>
                         </div>
                     </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Stage-wise Order Tracking -->
+            <?php if (!empty($stage_wise)): ?>
+                <div class="polar-order-item polar-stage-wise-panel">
+                    <div class="order-header">
+                        <h4><?php esc_html_e('Stage-wise Order Tracking', 'pexpress'); ?></h4>
+                    </div>
+                    <p class="polar-stage-wise-desc"><?php esc_html_e('Current stage, responsible person, and contact for each role. Use this to contact the correct person.', 'pexpress'); ?></p>
+                    <table class="polar-table polar-table-striped polar-stage-wise-table">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e('Stage', 'pexpress'); ?></th>
+                                <th><?php esc_html_e('Current Status', 'pexpress'); ?></th>
+                                <th><?php esc_html_e('Responsible Person', 'pexpress'); ?></th>
+                                <th><?php esc_html_e('Contact', 'pexpress'); ?></th>
+                                <th><?php esc_html_e('Last Update', 'pexpress'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($stage_wise as $row): ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html($row['stage_label']); ?></strong></td>
+                                    <td><span class="status-chip status-<?php echo esc_attr($row['current_status'] === 'pending' ? 'pending' : (in_array($row['current_status'], array('customer_served', 'fridge_returned', 'handoff_complete', 'assigned', 'proceeded'), true) ? 'completed' : 'in-progress')); ?>"><?php echo esc_html($row['status_label']); ?></span></td>
+                                    <td><?php echo esc_html($row['responsible_name'] ? $row['responsible_name'] : '—'); ?></td>
+                                    <td><?php
+                                        if (!empty($row['contact_phone'])) {
+                                            echo '<a href="tel:' . esc_attr(preg_replace('/[^0-9+]/', '', $row['contact_phone'])) . '" class="detail-link">' . esc_html($row['contact_phone']) . '</a>';
+                                        } else {
+                                            echo '—';
+                                        }
+                                    ?></td>
+                                    <td><?php
+                                        if (!empty($row['last_update_timestamp'])) {
+                                            echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $row['last_update_timestamp']));
+                                            if (!empty($row['last_update_note'])) {
+                                                echo ' <span class="polar-update-note">' . esc_html($row['last_update_note']) . '</span>';
+                                            }
+                                        } else {
+                                            echo '—';
+                                        }
+                                    ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             <?php endif; ?>
         </div>

@@ -62,6 +62,8 @@ class PExpress_Admin
     private function init()
     {
         add_action('admin_menu', array($this->modules['menus'], 'register_menus'));
+        add_action('admin_init', array($this->modules['menus'], 'redirect_wrong_page_slugs'));
+        add_action('admin_footer', array($this->modules['menus'], 'fix_menu_links_js'));
         add_action('admin_init', array($this->modules['settings'], 'register_settings'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         // Fallback to ensure CSS loads for all users - use admin_print_styles as backup
@@ -94,7 +96,7 @@ class PExpress_Admin
         }
 
         $current_user = wp_get_current_user();
-        $page = isset($_GET['page']) ? $_GET['page'] : '';
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
 
         // Set correct title based on page
         if ($page === 'polar-express') {
@@ -129,7 +131,7 @@ class PExpress_Admin
 
         // Fallback: Check page parameter from URL (most reliable)
         if (!$is_polar_page && isset($_GET['page'])) {
-            $page = sanitize_text_field($_GET['page']);
+            $page = sanitize_text_field(wp_unslash($_GET['page']));
             if (strpos($page, 'polar-express') !== false || strpos($page, 'polar_express') !== false) {
                 $is_polar_page = true;
             }
@@ -164,7 +166,7 @@ class PExpress_Admin
         );
 
         // Enqueue setup wizard script if on setup wizard page
-        $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
         if (strpos($hook, 'polar-express-setup-wizard') !== false || $page === 'polar-express-setup-wizard') {
             wp_enqueue_script(
                 'pexpress-admin-setup',
@@ -210,7 +212,7 @@ class PExpress_Admin
 
         // Check page parameter from URL (most reliable method)
         if (isset($_GET['page'])) {
-            $page = sanitize_text_field($_GET['page']);
+            $page = sanitize_text_field(wp_unslash($_GET['page']));
             if (strpos($page, 'polar-express') !== false || strpos($page, 'polar_express') !== false) {
                 $is_polar_page = true;
             }

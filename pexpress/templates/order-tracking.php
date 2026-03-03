@@ -95,7 +95,7 @@ function pexpress_get_status_class($status)
         ?>
         <div class="polar-status-card polar-status-agency">
             <div class="polar-status-header">
-                <h3><?php echo esc_html__('Agency', 'pexpress'); ?></h3>
+                <h3><?php echo esc_html__('Distribution', 'pexpress'); ?></h3>
                 <span class="polar-status-badge polar-status-<?php echo esc_attr(pexpress_get_status_class($hr_status ? $hr_status : 'pending')); ?>" data-status="<?php echo esc_attr($hr_status ? $hr_status : 'pending'); ?>">
                     <?php echo esc_html(pexpress_get_status_label('agency', $hr_status ? $hr_status : 'pending', $status_labels)); ?>
                 </span>
@@ -235,7 +235,7 @@ function pexpress_get_status_class($status)
         ?>
         <div class="polar-status-card polar-status-fridge">
             <div class="polar-status-header">
-                <h3><?php echo esc_html__('Fridge Provider', 'pexpress'); ?></h3>
+                <h3><?php echo esc_html__('Fridge Dept (FSD)', 'pexpress'); ?></h3>
                 <?php $current_fridge_status = $fridge_status ? $fridge_status : 'pending'; ?>
                 <span class="polar-status-badge polar-status-<?php echo esc_attr(pexpress_get_status_class($current_fridge_status)); ?>" data-status="<?php echo esc_attr($current_fridge_status); ?>">
                     <?php echo esc_html(pexpress_get_status_label('fridge', $current_fridge_status, $status_labels)); ?>

@@ -254,6 +254,111 @@ class PExpress_Core
     }
 
     /**
+     * Get stage-wise order tracking data for an order (current stage, responsible person, contact, last update).
+     *
+     * @param int $order_id Order ID.
+     * @return array List of stages with stage_key, stage_label, current_status, status_label, responsible_user_id, responsible_name, contact_phone, last_update_timestamp, last_update_note.
+     */
+    public static function get_stage_wise_tracking($order_id)
+    {
+        $order_id = absint($order_id);
+        if (!$order_id) {
+            return array();
+        }
+
+        $status_labels = array(
+            'agency' => array(
+                'pending' => __('Pending', 'pexpress'),
+                'assigned' => __('Assigned', 'pexpress'),
+                'proceeded' => __('Proceeded', 'pexpress'),
+                'confirmed' => __('Confirmed', 'pexpress'),
+                'completed' => __('Completed', 'pexpress'),
+            ),
+            'delivery' => array(
+                'pending' => __('Pending', 'pexpress'),
+                'meet_point_arrived' => __('Reached Meet Point', 'pexpress'),
+                'delivery_location_arrived' => __('Reached Delivery Location', 'pexpress'),
+                'service_in_progress' => __('Service In Progress', 'pexpress'),
+                'service_complete' => __('Service Completed', 'pexpress'),
+                'customer_served' => __('Ice-cream Delivered', 'pexpress'),
+            ),
+            'fridge' => array(
+                'pending' => __('Pending', 'pexpress'),
+                'fridge_drop' => __('Fridge Delivered On-site', 'pexpress'),
+                'fridge_collected' => __('Fridge Collected On-site', 'pexpress'),
+                'fridge_returned' => __('Fridge Returned to Base', 'pexpress'),
+            ),
+            'distributor' => array(
+                'pending' => __('Pending', 'pexpress'),
+                'distributor_prep' => __('Product Provider Preparing', 'pexpress'),
+                'out_for_delivery' => __('Out for Delivery', 'pexpress'),
+                'handoff_complete' => __('Product Provider Handoff Complete', 'pexpress'),
+            ),
+        );
+
+        $stage_config = array(
+            array('key' => 'agency', 'label' => __('Distribution', 'pexpress'), 'user_id_key' => null),
+            array('key' => 'delivery', 'label' => __('SR', 'pexpress'), 'user_id_key' => 'delivery'),
+            array('key' => 'fridge', 'label' => __('Fridge Dept (FSD)', 'pexpress'), 'user_id_key' => 'fridge'),
+            array('key' => 'distributor', 'label' => __('Product Provider', 'pexpress'), 'user_id_key' => 'distributor'),
+        );
+
+        $stages = array();
+        foreach ($stage_config as $config) {
+            $role_key = $config['key'];
+            $current_status = self::get_role_status($order_id, $role_key);
+            if ($current_status === '' || $current_status === null) {
+                $current_status = 'pending';
+            }
+            $labels = isset($status_labels[$role_key]) ? $status_labels[$role_key] : array();
+            $status_label = isset($labels[$current_status]) ? $labels[$current_status] : ucfirst(str_replace('_', ' ', $current_status));
+
+            $responsible_user_id = 0;
+            if ($config['user_id_key'] === 'delivery') {
+                $responsible_user_id = self::get_delivery_user_id($order_id);
+            } elseif ($config['user_id_key'] === 'fridge') {
+                $responsible_user_id = self::get_fridge_user_id($order_id);
+            } elseif ($config['user_id_key'] === 'distributor') {
+                $responsible_user_id = self::get_distributor_user_id($order_id);
+            }
+
+            $responsible_name = '';
+            $contact_phone = '';
+            if ($responsible_user_id) {
+                $user = get_userdata($responsible_user_id);
+                $responsible_name = $user ? $user->display_name : '';
+                $contact_phone = (string) get_user_meta($responsible_user_id, 'billing_phone', true);
+                if ($contact_phone === '' && function_exists('get_user_meta')) {
+                    $contact_phone = (string) get_user_meta($responsible_user_id, 'phone', true);
+                }
+            }
+
+            $history = self::get_role_status_history($order_id, $role_key);
+            $last_update_timestamp = '';
+            $last_update_note = '';
+            if (!empty($history) && is_array($history)) {
+                $last = end($history);
+                $last_update_timestamp = isset($last['timestamp']) ? $last['timestamp'] : '';
+                $last_update_note = isset($last['note']) ? $last['note'] : '';
+            }
+
+            $stages[] = array(
+                'stage_key' => $role_key,
+                'stage_label' => $config['label'],
+                'current_status' => $current_status,
+                'status_label' => $status_label,
+                'responsible_user_id' => $responsible_user_id,
+                'responsible_name' => $responsible_name,
+                'contact_phone' => $contact_phone,
+                'last_update_timestamp' => $last_update_timestamp,
+                'last_update_note' => $last_update_note,
+            );
+        }
+
+        return $stages;
+    }
+
+    /**
      * Get orders assigned to a user
      *
      * @param int    $user_id User ID.

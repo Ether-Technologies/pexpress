@@ -1287,6 +1287,7 @@ class PExpress
                     'status' => $hr_status,
                     'label' => $get_status_label('agency', $hr_status),
                     'class' => $get_status_class($hr_status),
+                    'stage_label' => __('Distribution', 'pexpress'),
                 ),
                 'delivery' => array(
                     'status' => $delivery_status,
@@ -1307,6 +1308,7 @@ class PExpress
                     'user_name' => $distributor_user_name,
                 ),
             ),
+            'stage_wise' => PExpress_Core::get_stage_wise_tracking($order_id),
             'timestamp' => current_time('mysql'),
         ));
     }

@@ -174,7 +174,7 @@ if (!function_exists('pexpress_render_fridge_task_card')) {
         $fridge_asset_id    = PExpress_Core::get_fridge_asset_id($order_id);
         $fridge_return_raw  = PExpress_Core::get_order_meta($order_id, '_polar_fridge_return_date');
         $fridge_return_time = $fridge_return_raw ? strtotime($fridge_return_raw) : false;
-        $fridge_return_display = $fridge_return_time ? date_i18n(get_option('date_format'), $fridge_return_time) : $fridge_return_raw;
+        $fridge_return_display = $fridge_return_time ? date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $fridge_return_time) : $fridge_return_raw;
         $fridge_instructions = PExpress_Core::get_role_instructions($order_id, 'fridge');
         $assignment_note     = PExpress_Core::get_order_meta($order_id, '_polar_assignment_note');
 
@@ -338,7 +338,7 @@ if (!function_exists('pexpress_render_fridge_task_card')) {
                         <?php endif; ?>
                         <?php if (!empty($assignment_note)) : ?>
                             <div class="order-detail-item order-detail-full">
-                                <span class="detail-label"><?php esc_html_e('HR Notes', 'pexpress'); ?></span>
+                                <span class="detail-label"><?php esc_html_e('Distribution Notes', 'pexpress'); ?></span>
                                 <p class="detail-note"><?php echo nl2br(esc_html($assignment_note)); ?></p>
                             </div>
                         <?php endif; ?>
@@ -497,7 +497,7 @@ if (!function_exists('pexpress_render_fridge_task_card')) {
                                     </a>
                                 </td>
                                 <td><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></td>
-                                <td><?php echo $return_date ? esc_html(date_i18n(get_option('date_format'), strtotime($return_date))) : '—'; ?></td>
+                                <td><?php echo $return_date ? esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($return_date))) : '—'; ?></td>
                                 <td><?php echo esc_html($order->get_date_modified()->date_i18n()); ?></td>
                                 <td><?php echo esc_html(wc_get_order_status_name($order->get_status())); ?></td>
                             </tr>

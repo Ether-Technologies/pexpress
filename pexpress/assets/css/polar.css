@@ -951,11 +951,99 @@ body.polar-order-edit-page #wpbody-content {
   }
 }
 
-/* HR Dashboard Specific */
+/* Agency / Distribution Dashboard */
 .polar-hr-dashboard .assignment-form {
   background: #f6f7f7;
   padding: 15px;
   border-radius: 4px;
+}
+
+.polar-history-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.polar-tracking-modal-statuses {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.polar-tracking-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f6f7f7;
+}
+
+.polar-tracking-status-row.polar-status-completed {
+  background: #ecfdf5;
+}
+
+.polar-tracking-status-row.polar-status-in-progress {
+  background: #fef3c7;
+}
+
+.polar-tracking-stage {
+  font-weight: 600;
+}
+
+.polar-tracking-badge {
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+}
+
+.polar-tracking-status-row.polar-status-completed .polar-tracking-badge {
+  background: #10b981;
+  color: #fff;
+}
+
+.polar-tracking-status-row.polar-status-in-progress .polar-tracking-badge {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.polar-stage-wise .polar-tracking-status-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.polar-tracking-stage-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.polar-tracking-contact-info {
+  font-size: 13px;
+  color: #374151;
+}
+
+.polar-tracking-contact-info .polar-tracking-person {
+  font-weight: 500;
+}
+
+.polar-tracking-contact-info .polar-tracking-phone {
+  margin-left: 8px;
+}
+
+.polar-tracking-contact-info .polar-tracking-update {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.polar-tracking-empty {
+  color: #9ca3af;
 }
 
 /* Real-time Update Indicator */

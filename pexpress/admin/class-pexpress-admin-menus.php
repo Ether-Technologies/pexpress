@@ -239,6 +239,45 @@ class PExpress_Admin_Menus
     }
 
     /**
+     * Output a small script that rewrites sidebar links in the browser only.
+     * Fixes "handai" prefix without touching PHP menu globals (avoids 404 / missing submenus).
+     */
+    public function fix_menu_links_js()
+    {
+        ?>
+        <script>
+        (function(){
+            document.querySelectorAll('#adminmenu a[href*="page=handaipolar-express"]').forEach(function(a){
+                a.href = a.href.replace(/page=handaipolar-express/g, 'page=polar-express');
+            });
+        })();
+        </script>
+        <?php
+    }
+
+    /**
+     * Redirect wrong page= URLs (e.g. handaipolar-express-fridge) to the correct slug.
+     * Fixes 404s when another plugin or environment corrupts the menu link.
+     */
+    public function redirect_wrong_page_slugs()
+    {
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        if ($page === '' || strpos($page, 'polar-express') === false) {
+            return;
+        }
+        $prefix = 'handai';
+        if (strpos($page, $prefix) !== 0) {
+            return;
+        }
+        $correct = preg_replace('/^' . preg_quote($prefix, '/') . '/', '', $page);
+        if ($correct === '' || $correct === $page) {
+            return;
+        }
+        wp_safe_redirect(admin_url('admin.php?page=' . $correct));
+        exit;
+    }
+
+    /**
      * Render Agency Dashboard page
      */
     public function render_agency_dashboard()

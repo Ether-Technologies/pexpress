@@ -316,10 +316,10 @@ class PExpress_Admin_Order_Manipulation
                     'modalQuantityLabel' => __('Quantity', 'pexpress'),
                     'addProductError' => __('Error adding item.', 'pexpress'),
                     'genericError' => __('An error occurred. Please try again.', 'pexpress'),
-                    'forwarding' => __('Forwarding to HR...', 'pexpress'),
-                    'forwardSuccess' => __('Order forwarded to HR.', 'pexpress'),
+                    'forwarding' => __('Forwarding to Distribution...', 'pexpress'),
+                    'forwardSuccess' => __('Order forwarded to Distribution.', 'pexpress'),
                     'forwardError' => __('Unable to forward order. Please try again.', 'pexpress'),
-                    'awaitingAssignment' => __('Awaiting HR Assignment', 'pexpress'),
+                    'awaitingAssignment' => __('Awaiting Distribution Assignment', 'pexpress'),
                     'updateForwarding' => __('Update Forwarding', 'pexpress'),
                     'revokeConfirm' => __('Are you sure you want to revoke this order from SR?', 'pexpress'),
                     'revoking' => __('Revoking from SR...', 'pexpress'),
@@ -501,7 +501,7 @@ class PExpress_Admin_Order_Manipulation
         }
 
         if ($this->is_hr_only_user()) {
-            wp_die(__('HR users cannot edit orders. Please use the HR dashboard for assignments.', 'pexpress'));
+            wp_die(__('Distribution users cannot edit orders. Please use the Agency dashboard for assignments.', 'pexpress'));
         }
 
         // Get order ID from URL
@@ -553,6 +553,9 @@ class PExpress_Admin_Order_Manipulation
         $shipping_first_name = $order->get_shipping_first_name();
         $shipping_last_name = $order->get_shipping_last_name();
         $shipping_company = $order->get_shipping_company();
+
+        // Stage-wise tracking for panel
+        $stage_wise = PExpress_Core::get_stage_wise_tracking($order_id);
 
         // Products for Add Product dropdown (simple list, no search)
         $products_dropdown = array();
@@ -607,6 +610,7 @@ class PExpress_Admin_Order_Manipulation
         $shipping_last_name = isset($shipping_last_name) ? $shipping_last_name : '';
         $shipping_company = isset($shipping_company) ? $shipping_company : '';
         $products_dropdown = isset($products_dropdown) && is_array($products_dropdown) ? $products_dropdown : array();
+        $stage_wise = isset($stage_wise) && is_array($stage_wise) ? $stage_wise : array();
 
         // Include the template
         include PEXPRESS_PLUGIN_DIR . 'templates/order-edit.php';
@@ -1263,13 +1267,13 @@ class PExpress_Admin_Order_Manipulation
 
         $current_status = $order->get_status();
         if ('processing' !== $current_status) {
-            $order->update_status('processing', __('Order forwarded to HR for assignment.', 'pexpress'), false);
+            $order->update_status('processing', __('Order forwarded to Distribution for assignment.', 'pexpress'), false);
         }
 
         $order->add_order_note(
             sprintf(
                 /* translators: %s: user name */
-                __('Forwarded to HR by %s for assignment.', 'pexpress'),
+                __('Forwarded to Distribution by %s for assignment.', 'pexpress'),
                 $user->display_name
             ),
             false,
@@ -1289,7 +1293,7 @@ class PExpress_Admin_Order_Manipulation
         );
 
         wp_send_json_success(array(
-            'message' => __('Order forwarded to HR.', 'pexpress'),
+            'message' => __('Order forwarded to Distribution.', 'pexpress'),
             'forwarded_at' => $display_timestamp,
             'forwarded_by' => $user->display_name,
             'note' => $note,
@@ -1329,7 +1333,7 @@ class PExpress_Admin_Order_Manipulation
         $order->add_order_note(
             sprintf(
                 /* translators: %s: user name */
-                __('Revoked from HR by %s.', 'pexpress'),
+                __('Revoked from Distribution by %s.', 'pexpress'),
                 $user->display_name
             ),
             false,
@@ -1348,7 +1352,7 @@ class PExpress_Admin_Order_Manipulation
         );
 
         wp_send_json_success(array(
-            'message' => __('Order revoked from HR successfully.', 'pexpress'),
+            'message' => __('Order revoked from Distribution successfully.', 'pexpress'),
         ));
     }
 
