@@ -102,36 +102,38 @@
             const decimals = Utils.getCurrencyDecimals();
 
             const quantityAttr = parseFloat($row.data('quantity'));
-            const priceAttr = parseFloat($row.data('unitPrice'));
+            const priceDiscountedAttr = parseFloat($row.data('unitPrice'));
+            const priceActualAttr = parseFloat($row.data('unitPriceActual'));
             const totalAttr = parseFloat($row.data('lineTotal'));
 
-            const fallbackQuantity = parseFloat($row.find('.item-quantity').first().text()) || 1;
+            const fallbackQuantity = parseFloat($row.find('.item-quantity-badge').first().text()) || 1;
             const quantity = Number.isFinite(quantityAttr) && quantityAttr > 0 ? quantityAttr : fallbackQuantity;
 
-            const fallbackTotal = Number.isFinite(totalAttr) ? totalAttr : quantity * (parseFloat($row.find('.item-price').first().text().replace(/[^0-9.\-]/g, '')) || 0);
+            const fallbackTotal = Number.isFinite(totalAttr) ? totalAttr : (quantity * (priceDiscountedAttr || 0));
             const fallbackPrice = quantity ? fallbackTotal / quantity : 0;
-            const unitPrice = Number.isFinite(priceAttr) ? priceAttr : fallbackPrice;
+            const unitPriceDiscounted = Number.isFinite(priceDiscountedAttr) ? priceDiscountedAttr : fallbackPrice;
+            const unitPriceActual = Number.isFinite(priceActualAttr) ? priceActualAttr : unitPriceDiscounted;
             const priceStep = decimals > 0 ? Math.pow(10, -decimals) : 1;
 
             const $quantityCell = $row.find('td.column-quantity').first();
-            const $priceCell = $row.find('td.column-price').first();
+            const $priceCells = $row.find('td.column-price');
+            const $priceActualCell = $priceCells.eq(0);
+            const $priceDiscountedCell = $priceCells.eq(1);
             const $totalCell = $row.find('td.column-total').first();
             const $actionCell = $row.find('td.column-actions').first();
-
-            // Remove duplicate cells
-            $row.find('td.column-quantity').not($quantityCell).remove();
-            $row.find('td.column-price').not($priceCell).remove();
-            $row.find('td.column-total').not($totalCell).remove();
-            $row.find('td.column-actions').not($actionCell).remove();
 
             $quantityCell.empty().append(
                 $('<label>', { class: 'screen-reader-text', for: 'polar-edit-quantity-' + itemId, text: Utils.getI18n('quantityLabel', 'Quantity') }),
                 $('<input>', { type: 'number', id: 'polar-edit-quantity-' + itemId, class: 'polar-edit-quantity', value: quantity, min: 1, step: 1, css: { width: '100px' } })
             );
 
-            $priceCell.empty().append(
+            $priceActualCell.empty().append(
+                $('<span>', { class: 'item-price-actual-readonly' }).text(Utils.formatCurrency(unitPriceActual))
+            );
+
+            $priceDiscountedCell.empty().append(
                 $('<label>', { class: 'screen-reader-text', for: 'polar-edit-price-' + itemId, text: Utils.getI18n('priceLabel', 'Price') }),
-                $('<input>', { type: 'number', id: 'polar-edit-price-' + itemId, class: 'polar-edit-price', value: Number.isFinite(unitPrice) ? unitPrice.toFixed(decimals) : (0).toFixed(decimals), min: 0, step: priceStep, css: { width: '120px' } })
+                $('<input>', { type: 'number', id: 'polar-edit-price-' + itemId, class: 'polar-edit-price', value: Number.isFinite(unitPriceDiscounted) ? unitPriceDiscounted.toFixed(decimals) : (0).toFixed(decimals), min: 0, step: priceStep, css: { width: '120px' } })
             );
 
             const $totalPreview = $('<span>', { class: 'item-total-preview' });
@@ -146,12 +148,12 @@
 
             const updatePreview = function () {
                 const qty = parseFloat($quantityCell.find('.polar-edit-quantity').val()) || 0;
-                const price = parseFloat($priceCell.find('.polar-edit-price').val()) || 0;
+                const price = parseFloat($priceDiscountedCell.find('.polar-edit-price').val()) || 0;
                 $totalPreview.text(Utils.formatCurrency(qty * price));
             };
 
             $quantityCell.find('.polar-edit-quantity').on('input', updatePreview);
-            $priceCell.find('.polar-edit-price').on('input', updatePreview);
+            $priceDiscountedCell.find('.polar-edit-price').on('input', updatePreview);
             updatePreview();
         },
 
@@ -178,7 +180,10 @@
             const priceValue = $row.find('.polar-edit-price').val();
 
             const quantity = parseInt(quantityValue, 10);
-            const price = priceValue === '' ? null : parseFloat(priceValue);
+            const originalUnitPrice = parseFloat($row.data('unitPrice'));
+            const newPrice = priceValue === '' ? null : parseFloat(priceValue);
+            const priceChanged = newPrice !== null && isFinite(originalUnitPrice) && Math.abs(newPrice - originalUnitPrice) > 1e-9;
+            const price = priceChanged ? newPrice : null;
 
             if (!Number.isInteger(quantity) || quantity < 1) {
                 alert(Utils.getI18n('invalidQuantity', 'Please enter a valid quantity.'));

@@ -44,12 +44,19 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_NAME: wordpress
-      WORDPRESS_DEBUG: 1
+      WORDPRESS_DEBUG: 0
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_DEBUG_LOG', true);
+        define('WP_DEBUG_DISPLAY', false);
+        @ini_set('display_errors', 0);
     volumes:
       - wordpress-app-data:/var/www/html
       - ./pexpress:/var/www/html/wp-content/plugins/polar-express
       - ../ethertech-wootp:/var/www/html/wp-content/plugins/ethertech-wootp
       - ../mailgun:/var/www/html/wp-content/plugins/mailgun
+      - ./plugins/handai:/var/www/html/wp-content/plugins/handai
+      - ./docker/config/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      - ./docker/config/apache-upload-limit.conf:/etc/apache2/conf-enabled/apache-upload-limit.conf:ro
     networks:
       - wordpress-dev-network
     healthcheck:

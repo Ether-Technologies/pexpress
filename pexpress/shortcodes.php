@@ -860,7 +860,8 @@ function polar_order_information_shortcode($atts)
                                 <tr>
                                     <th><?php esc_html_e('Product', 'pexpress'); ?></th>
                                     <th><?php esc_html_e('Quantity', 'pexpress'); ?></th>
-                                    <th><?php esc_html_e('Price', 'pexpress'); ?></th>
+                                    <th><?php esc_html_e('Actual price', 'pexpress'); ?></th>
+                                    <th><?php esc_html_e('Discounted price', 'pexpress'); ?></th>
                                     <th><?php esc_html_e('Total', 'pexpress'); ?></th>
                                 </tr>
                             </thead>
@@ -872,6 +873,8 @@ function polar_order_information_shortcode($atts)
                                     $quantity = $item->get_quantity();
                                     $line_total = $item->get_total();
                                     $line_subtotal = $item->get_subtotal();
+                                    $unit_actual = $quantity > 0 ? ($line_subtotal / $quantity) : 0;
+                                    $unit_discounted = $quantity > 0 ? ($line_total / $quantity) : 0;
                                     ?>
                                     <tr>
                                         <td>
@@ -888,14 +891,15 @@ function polar_order_information_shortcode($atts)
                                             ?>
                                         </td>
                                         <td><?php echo esc_html($quantity); ?></td>
-                                        <td><?php echo wp_kses_post(wc_price($line_subtotal / $quantity)); ?></td>
+                                        <td><?php echo wp_kses_post(wc_price($unit_actual)); ?></td>
+                                        <td><?php echo wp_kses_post(wc_price($unit_discounted)); ?></td>
                                         <td><strong><?php echo wp_kses_post(wc_price($line_total)); ?></strong></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" class="text-right">
+                                    <td colspan="4" class="text-right">
                                         <strong><?php esc_html_e('Order Total', 'pexpress'); ?>:</strong>
                                     </td>
                                     <td><strong><?php echo wp_kses_post($order_total); ?></strong></td>

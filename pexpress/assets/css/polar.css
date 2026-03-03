@@ -2115,6 +2115,21 @@ body.polar-order-edit-page #wpbody-content {
     margin-bottom: 20px;
 }
 
+.polar-add-product-table {
+    max-width: 100%;
+    table-layout: fixed;
+}
+
+.polar-add-product-table .polar-modal-td-product {
+    max-width: 320px;
+}
+
+.polar-product-dropdown {
+    max-width: 100%;
+    width: 280px;
+    box-sizing: border-box;
+}
+
 .polar-inline-actions {
     margin-top: 20px;
     display: flex;

@@ -41,6 +41,7 @@ class PExpress_Admin_Order_Manipulation
         add_action('wp_ajax_polar_search_products', array($this, 'ajax_search_products'));
         add_action('wp_ajax_polar_forward_order_to_hr', array($this, 'ajax_forward_order_to_hr'));
         add_action('wp_ajax_polar_revoke_order_from_hr', array($this, 'ajax_revoke_order_from_hr'));
+        add_action('wp_ajax_polar_update_shipping_address', array($this, 'ajax_update_shipping_address'));
 
         // Allow WooCommerce product search for our users
         add_filter('woocommerce_json_search_found_products', array($this, 'allow_product_search'), 10, 1);
@@ -243,6 +244,7 @@ class PExpress_Admin_Order_Manipulation
             'item-actions',
             'add-product',
             'forwarding',
+            'shipping',
             'order-actions',
             'history',
         );
@@ -325,6 +327,8 @@ class PExpress_Admin_Order_Manipulation
                     'revokeError' => __('Unable to revoke order. Please try again.', 'pexpress'),
                     'notForwarded' => __('Not Yet Forwarded', 'pexpress'),
                     'forwardToHR' => __('Forward to SR', 'pexpress'),
+                    'shippingSaving' => __('Saving...', 'pexpress'),
+                    'shippingSaved' => __('Address updated.', 'pexpress'),
                 ),
             )
         );
@@ -400,6 +404,7 @@ class PExpress_Admin_Order_Manipulation
             'item-actions',
             'add-product',
             'forwarding',
+            'shipping',
             'order-actions',
             'history',
         );
@@ -521,6 +526,53 @@ class PExpress_Admin_Order_Manipulation
         $forwarded_by = (int) PExpress_Core::get_order_meta($order_id, '_polar_forwarded_by');
         $forward_note = PExpress_Core::get_order_meta($order_id, '_polar_forward_note');
 
+        // Extra info for Support Portal
+        $order_number = $order->get_order_number();
+        $payment_method_title = $order->get_payment_method_title();
+        $customer_id = $order->get_customer_id();
+        $customer_url = $customer_id ? get_edit_user_link($customer_id) : '';
+        $order_subtotal = $order->get_subtotal();
+        $customer_note = $order->get_customer_note();
+        $order_confirmed_at = PExpress_Core::get_order_meta($order_id, '_polar_order_confirmed');
+        $order_completed_at = PExpress_Core::get_order_meta($order_id, '_polar_order_completed');
+        $meeting_type = PExpress_Core::get_meeting_type($order_id);
+        $meeting_location = PExpress_Core::get_meeting_location($order_id);
+        $meeting_datetime = PExpress_Core::get_meeting_datetime($order_id);
+        $meeting_datetime_display = '';
+        if (!empty($meeting_datetime)) {
+            $ts = strtotime($meeting_datetime);
+            $meeting_datetime_display = $ts ? date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $ts) : $meeting_datetime;
+        }
+        $shipping_formatted = $order->get_formatted_shipping_address();
+        $shipping_address_1 = $order->get_shipping_address_1();
+        $shipping_address_2 = $order->get_shipping_address_2();
+        $shipping_city = $order->get_shipping_city();
+        $shipping_state = $order->get_shipping_state();
+        $shipping_postcode = $order->get_shipping_postcode();
+        $shipping_country = $order->get_shipping_country();
+        $shipping_first_name = $order->get_shipping_first_name();
+        $shipping_last_name = $order->get_shipping_last_name();
+        $shipping_company = $order->get_shipping_company();
+
+        // Products for Add Product dropdown (simple list, no search)
+        $products_dropdown = array();
+        if (function_exists('wc_get_products')) {
+            $products = wc_get_products(array(
+                'status' => 'publish',
+                'limit' => 300,
+                'orderby' => 'title',
+                'order' => 'ASC',
+                'return' => 'ids',
+                'exclude' => array(),
+            ));
+            foreach ($products as $pid) {
+                $product = wc_get_product($pid);
+                if ($product && !$product->is_type('variable')) {
+                    $products_dropdown[$pid] = $product->get_name();
+                }
+            }
+        }
+
         // Make variables available to template
         $order_id = $order_id;
         $order = $order;
@@ -533,6 +585,28 @@ class PExpress_Admin_Order_Manipulation
         $forwarded_at = $forwarded_at;
         $forwarded_by = $forwarded_by;
         $forward_note = $forward_note ? $forward_note : '';
+        $order_number = isset($order_number) ? $order_number : '';
+        $payment_method_title = isset($payment_method_title) && $payment_method_title ? $payment_method_title : '';
+        $customer_id = isset($customer_id) ? (int) $customer_id : 0;
+        $customer_url = isset($customer_url) ? $customer_url : '';
+        $order_subtotal = isset($order_subtotal) ? $order_subtotal : 0;
+        $customer_note = isset($customer_note) ? $customer_note : '';
+        $order_confirmed_at = isset($order_confirmed_at) ? $order_confirmed_at : '';
+        $order_completed_at = isset($order_completed_at) ? $order_completed_at : '';
+        $meeting_type = isset($meeting_type) ? $meeting_type : '';
+        $meeting_location = isset($meeting_location) ? $meeting_location : '';
+        $meeting_datetime_display = isset($meeting_datetime_display) ? $meeting_datetime_display : '';
+        $shipping_formatted = isset($shipping_formatted) ? $shipping_formatted : '';
+        $shipping_address_1 = isset($shipping_address_1) ? $shipping_address_1 : '';
+        $shipping_address_2 = isset($shipping_address_2) ? $shipping_address_2 : '';
+        $shipping_city = isset($shipping_city) ? $shipping_city : '';
+        $shipping_state = isset($shipping_state) ? $shipping_state : '';
+        $shipping_postcode = isset($shipping_postcode) ? $shipping_postcode : '';
+        $shipping_country = isset($shipping_country) ? $shipping_country : '';
+        $shipping_first_name = isset($shipping_first_name) ? $shipping_first_name : '';
+        $shipping_last_name = isset($shipping_last_name) ? $shipping_last_name : '';
+        $shipping_company = isset($shipping_company) ? $shipping_company : '';
+        $products_dropdown = isset($products_dropdown) && is_array($products_dropdown) ? $products_dropdown : array();
 
         // Include the template
         include PEXPRESS_PLUGIN_DIR . 'templates/order-edit.php';
@@ -650,6 +724,17 @@ class PExpress_Admin_Order_Manipulation
         }
         if (isset($value['price'])) {
             $parts[] = 'Price: ' . wc_price($value['price']);
+        }
+        if (isset($value['address_1']) || isset($value['city']) || isset($value['postcode'])) {
+            $addr = array_filter(array(
+                isset($value['address_1']) ? $value['address_1'] : '',
+                isset($value['address_2']) ? $value['address_2'] : '',
+                isset($value['city']) ? $value['city'] : '',
+                isset($value['state']) ? $value['state'] : '',
+                isset($value['postcode']) ? $value['postcode'] : '',
+                isset($value['country']) ? $value['country'] : '',
+            ));
+            $parts[] = 'Address: ' . implode(', ', $addr);
         }
 
         return implode(', ', $parts);
@@ -856,9 +941,10 @@ class PExpress_Admin_Order_Manipulation
         );
 
         $existing_quantity = max($item->get_quantity(), 1);
-        $existing_line_total = wc_format_decimal($item->get_total());
-        $unit_price = $existing_quantity > 0 ? $existing_line_total / $existing_quantity : 0;
-        $unit_price = wc_format_decimal($unit_price);
+        $existing_line_total = (float) $item->get_total();
+        $existing_line_subtotal = (float) $item->get_subtotal();
+        $unit_price_discounted = $existing_quantity > 0 ? $existing_line_total / $existing_quantity : 0;
+        $unit_price_actual = $existing_quantity > 0 ? $existing_line_subtotal / $existing_quantity : 0;
 
         $quantity_changed = false;
         $new_quantity = $item->get_quantity();
@@ -869,13 +955,21 @@ class PExpress_Admin_Order_Manipulation
         }
 
         if ($price_provided && $price !== null) {
-            $unit_price = wc_format_decimal($price);
+            $unit_price_discounted = (float) wc_format_decimal($price);
         }
 
         if ($price_provided || $quantity_changed) {
-            $line_total = wc_format_decimal($unit_price * max($new_quantity, 1));
-            $item->set_subtotal($line_total);
-            $item->set_total($line_total);
+            $new_quantity_for_calc = max($new_quantity, 1);
+            if ($price_provided && $price !== null) {
+                $line_total = (float) wc_format_decimal($unit_price_discounted * $new_quantity_for_calc);
+                $item->set_subtotal($line_total);
+                $item->set_total($line_total);
+            } else {
+                $new_subtotal = (float) wc_format_decimal($unit_price_actual * $new_quantity_for_calc);
+                $new_total = (float) wc_format_decimal($unit_price_discounted * $new_quantity_for_calc);
+                $item->set_subtotal($new_subtotal);
+                $item->set_total($new_total);
+            }
             $item->set_subtotal_tax(0);
             $item->set_total_tax(0);
             $item->set_taxes(array());
@@ -1255,6 +1349,84 @@ class PExpress_Admin_Order_Manipulation
 
         wp_send_json_success(array(
             'message' => __('Order revoked from HR successfully.', 'pexpress'),
+        ));
+    }
+
+    /**
+     * AJAX handler: Update order shipping address
+     */
+    public function ajax_update_shipping_address()
+    {
+        $this->verify_request();
+
+        $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+        if (!$order_id) {
+            wp_send_json_error(array('message' => __('Invalid order ID.', 'pexpress')));
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(array('message' => __('Order not found.', 'pexpress')));
+        }
+
+        $old_address = array(
+            'first_name' => $order->get_shipping_first_name(),
+            'last_name' => $order->get_shipping_last_name(),
+            'company' => $order->get_shipping_company(),
+            'address_1' => $order->get_shipping_address_1(),
+            'address_2' => $order->get_shipping_address_2(),
+            'city' => $order->get_shipping_city(),
+            'state' => $order->get_shipping_state(),
+            'postcode' => $order->get_shipping_postcode(),
+            'country' => $order->get_shipping_country(),
+        );
+
+        $fields = array('first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country');
+        $new_address = array();
+        foreach ($fields as $field) {
+            $key = 'shipping_' . $field;
+            if (array_key_exists($key, $_POST)) {
+                $new_address[$field] = sanitize_text_field(wp_unslash($_POST[$key]));
+            } else {
+                $new_address[$field] = isset($old_address[$field]) ? $old_address[$field] : '';
+            }
+        }
+
+        $order->set_shipping_first_name($new_address['first_name']);
+        $order->set_shipping_last_name($new_address['last_name']);
+        $order->set_shipping_company($new_address['company']);
+        $order->set_shipping_address_1($new_address['address_1']);
+        $order->set_shipping_address_2($new_address['address_2']);
+        $order->set_shipping_city($new_address['city']);
+        $order->set_shipping_state($new_address['state']);
+        $order->set_shipping_postcode($new_address['postcode']);
+        $order->set_shipping_country($new_address['country']);
+        $order->save();
+
+        $user = wp_get_current_user();
+        $order->add_order_note(
+            sprintf(
+                /* translators: %s: user name */
+                __('Shipping address updated by %s.', 'pexpress'),
+                $user->display_name
+            ),
+            false,
+            true
+        );
+
+        $this->log_order_modification(
+            $order_id,
+            'shipping_address_updated',
+            $old_address,
+            $new_address,
+            $order->get_total(),
+            $order->get_total()
+        );
+
+        $formatted = $order->get_formatted_shipping_address();
+        wp_send_json_success(array(
+            'message' => __('Shipping address updated.', 'pexpress'),
+            'formatted' => $formatted ? $formatted : '',
         ));
     }
 

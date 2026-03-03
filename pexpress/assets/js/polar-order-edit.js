@@ -39,7 +39,7 @@
             }
 
             // Verify modules are loaded
-            const modules = ['Utils', 'API', 'Select2', 'ItemActions', 'AddProduct', 'Forwarding', 'OrderActions', 'History'];
+            const modules = ['Utils', 'API', 'Select2', 'ItemActions', 'AddProduct', 'Forwarding', 'Shipping', 'OrderActions', 'History'];
             const missingModules = modules.filter(function (module) {
                 return !window.PolarOrderEdit || !window.PolarOrderEdit[module];
             });
@@ -57,6 +57,9 @@
             window.PolarOrderEdit.AddProduct.init();
             window.PolarOrderEdit.History.init();
             window.PolarOrderEdit.Forwarding.init();
+            if (window.PolarOrderEdit.Shipping) {
+                window.PolarOrderEdit.Shipping.init();
+            }
             window.PolarOrderEdit.OrderActions.init();
         }
     };

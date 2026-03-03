@@ -109,10 +109,22 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path
-                                        d="M12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z"
-                                        fill="currentColor" />
+                                        d="M7 20H17M10 12H14M5 8H19C20.1046 8 21 8.89543 21 10V18C21 19.1046 20.1046 20 19 20H5C3.89543 20 3 19.1046 3 18V10C3 8.89543 3.89543 8 5 8Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                            <div class="detail-content">
+                                <span class="detail-label"><?php esc_html_e('Order number', 'pexpress'); ?></span>
+                                <span class="detail-value">#<?php echo esc_html($order_number ? $order_number : $order_id); ?></span>
+                            </div>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="detail-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
                                     <path
-                                        d="M12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6Z"
+                                        d="M12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z"
                                         fill="currentColor" />
                                     <path
                                         d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z"
@@ -120,11 +132,42 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 </svg>
                             </span>
                             <div class="detail-content">
-                                <span class="detail-label"><?php esc_html_e('Total', 'pexpress'); ?></span>
+                                <span class="detail-label"><?php esc_html_e('Subtotal (actual)', 'pexpress'); ?></span>
+                                <span class="detail-value order-subtotal"><?php echo wp_kses_post(wc_price($order_subtotal)); ?></span>
+                            </div>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="detail-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 8C12.5523 8 13 8.44772 13 9V13C13 13.5523 12.5523 14 12 14C11.4477 14 11 13.5523 11 13V9C11 8.44772 11.4477 8 12 8Z"
+                                        fill="currentColor" />
+                                    <path
+                                        d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z"
+                                        fill="currentColor" />
+                                </svg>
+                            </span>
+                            <div class="detail-content">
+                                <span class="detail-label"><?php esc_html_e('Total (discounted)', 'pexpress'); ?></span>
                                 <span class="detail-value order-total"><?php echo wp_kses_post($order_total); ?></span>
                             </div>
                         </div>
                     </div>
+                    <?php if ($payment_method_title): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Payment method', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($payment_method_title); ?></span>
+                        </div>
+                        <?php if ($customer_id && $customer_url): ?>
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Customer account', 'pexpress'); ?></span>
+                            <a href="<?php echo esc_url($customer_url); ?>" class="detail-value detail-link" target="_blank" rel="noopener">#<?php echo esc_html($customer_id); ?></a>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -209,13 +252,151 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 </svg>
                             </span>
                             <div class="detail-content">
-                                <span class="detail-label"><?php esc_html_e('Address', 'pexpress'); ?></span>
+                                <span class="detail-label"><?php esc_html_e('Billing address', 'pexpress'); ?></span>
                                 <span class="detail-value"><?php echo wp_kses_post(nl2br($billing_address)); ?></span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Shipping Address Card (editable by support) -->
+            <?php $is_support = in_array('polar_support', wp_get_current_user()->roles) || current_user_can('manage_woocommerce'); ?>
+            <div class="polar-order-item polar-shipping-address-card">
+                <div class="order-header">
+                    <h4><?php esc_html_e('Shipping Address', 'pexpress'); ?></h4>
+                    <?php if ($is_support): ?>
+                    <button type="button" class="button button-small polar-edit-shipping-btn" aria-label="<?php esc_attr_e('Edit shipping address', 'pexpress'); ?>">
+                        <?php esc_html_e('Edit', 'pexpress'); ?>
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <div class="polar-shipping-view">
+                    <p class="polar-shipping-display detail-value"><?php echo $shipping_formatted ? wp_kses_post(nl2br($shipping_formatted)) : '<span class="polar-no-address">' . esc_html__('No shipping address provided', 'pexpress') . '</span>'; ?></p>
+                </div>
+                <?php if ($is_support): ?>
+                <div class="polar-shipping-edit-form" style="display: none;">
+                    <p class="description" style="margin-bottom: 12px;"><?php esc_html_e('Update the shipping address for this order. Delivery and logistics will use this address.', 'pexpress'); ?></p>
+                    <table class="form-table" role="presentation">
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-first-name"><?php esc_html_e('First name', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-first-name" name="shipping_first_name" value="<?php echo esc_attr($shipping_first_name); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-last-name"><?php esc_html_e('Last name', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-last-name" name="shipping_last_name" value="<?php echo esc_attr($shipping_last_name); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-company"><?php esc_html_e('Company', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-company" name="shipping_company" value="<?php echo esc_attr($shipping_company); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-address-1"><?php esc_html_e('Address line 1', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-address-1" name="shipping_address_1" value="<?php echo esc_attr($shipping_address_1); ?>" class="large-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-address-2"><?php esc_html_e('Address line 2', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-address-2" name="shipping_address_2" value="<?php echo esc_attr($shipping_address_2); ?>" class="large-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-city"><?php esc_html_e('City', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-city" name="shipping_city" value="<?php echo esc_attr($shipping_city); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-state"><?php esc_html_e('State / County', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-state" name="shipping_state" value="<?php echo esc_attr($shipping_state); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-postcode"><?php esc_html_e('Postcode', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-postcode" name="shipping_postcode" value="<?php echo esc_attr($shipping_postcode); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="polar-shipping-country"><?php esc_html_e('Country', 'pexpress'); ?></label></th>
+                            <td><input type="text" id="polar-shipping-country" name="shipping_country" value="<?php echo esc_attr($shipping_country); ?>" class="regular-text" placeholder="e.g. BD" /></td>
+                        </tr>
+                    </table>
+                    <p class="polar-shipping-actions">
+                        <button type="button" class="button button-primary polar-save-shipping-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('Save address', 'pexpress'); ?></button>
+                        <button type="button" class="button polar-cancel-shipping-btn"><?php esc_html_e('Cancel', 'pexpress'); ?></button>
+                        <span class="polar-shipping-feedback" role="status" aria-live="polite"></span>
+                    </p>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($meeting_type || $meeting_location || $meeting_datetime_display): ?>
+            <!-- Meeting Information Card -->
+            <div class="polar-order-item">
+                <div class="order-header">
+                    <h4><?php esc_html_e('Meeting Information', 'pexpress'); ?></h4>
+                </div>
+                <div class="order-details">
+                    <?php if ($meeting_type): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Meeting type', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($meeting_type === 'meet_point' ? __('Meet point', 'pexpress') : ($meeting_type === 'delivery_location' ? __('Delivery location', 'pexpress') : esc_html($meeting_type))); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($meeting_location): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Meeting location', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($meeting_location); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($meeting_datetime_display): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Meeting date & time', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($meeting_datetime_display); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($customer_note): ?>
+            <!-- Order Notes (from customer) -->
+            <div class="polar-order-item">
+                <div class="order-header">
+                    <h4><?php esc_html_e('Order note (from customer)', 'pexpress'); ?></h4>
+                </div>
+                <div class="order-details">
+                    <p class="detail-value" style="white-space: pre-wrap;"><?php echo esc_html($customer_note); ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($order_confirmed_at || $order_completed_at): ?>
+            <!-- Confirmation & completion timestamps -->
+            <div class="polar-order-item">
+                <div class="order-header">
+                    <h4><?php esc_html_e('Status timestamps', 'pexpress'); ?></h4>
+                </div>
+                <div class="order-details">
+                    <?php if ($order_confirmed_at): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Order confirmed', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $order_confirmed_at)); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($order_completed_at): ?>
+                    <div class="order-detail-row">
+                        <div class="order-detail-item">
+                            <span class="detail-label"><?php esc_html_e('Order completed', 'pexpress'); ?></span>
+                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $order_completed_at)); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Order Items Card -->
             <div class="polar-order-item">
@@ -229,7 +410,8 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                             <tr>
                                 <th class="column-product"><?php esc_html_e('Product', 'pexpress'); ?></th>
                                 <th class="column-quantity"><?php esc_html_e('Quantity', 'pexpress'); ?></th>
-                                <th class="column-price"><?php esc_html_e('Price', 'pexpress'); ?></th>
+                                <th class="column-price"><?php esc_html_e('Actual price', 'pexpress'); ?></th>
+                                <th class="column-price"><?php esc_html_e('Discounted price', 'pexpress'); ?></th>
                                 <th class="column-total"><?php esc_html_e('Total', 'pexpress'); ?></th>
                                 <th class="column-actions"><?php esc_html_e('Actions', 'pexpress'); ?></th>
                             </tr>
@@ -318,17 +500,21 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 // Display items: parents first, then their bundled items
                                 foreach ($bundle_parents as $item_id => $item):
                                     $product = $item->get_product();
+                                    $item_subtotal = (float) $item->get_subtotal();
                                     $item_total = (float) $item->get_total();
                                     $item_quantity = (int) $item->get_quantity();
-                                    $unit_price = $item_quantity > 0 ? ($item_total / $item_quantity) : 0;
+                                    $unit_price_actual = $item_quantity > 0 ? ($item_subtotal / $item_quantity) : 0;
+                                    $unit_price_discounted = $item_quantity > 0 ? ($item_total / $item_quantity) : 0;
                                     $is_bundle = $product && $product->is_type('bundle');
                                     $has_bundled_items = isset($bundled_items[$item_id]) && !empty($bundled_items[$item_id]);
                                 ?>
                                     <tr class="polar-order-item-row <?php echo $is_bundle ? 'is-bundle-parent' : ''; ?>"
                                         data-item-id="<?php echo esc_attr($item_id); ?>"
                                         data-quantity="<?php echo esc_attr($item_quantity); ?>"
-                                        data-unit-price="<?php echo esc_attr(wc_format_decimal($unit_price)); ?>"
-                                        data-line-total="<?php echo esc_attr(wc_format_decimal($item_total)); ?>">
+                                        data-unit-price="<?php echo esc_attr(wc_format_decimal($unit_price_discounted)); ?>"
+                                        data-unit-price-actual="<?php echo esc_attr(wc_format_decimal($unit_price_actual)); ?>"
+                                        data-line-total="<?php echo esc_attr(wc_format_decimal($item_total)); ?>"
+                                        data-line-subtotal="<?php echo esc_attr(wc_format_decimal($item_subtotal)); ?>">
                                         <td class="column-product">
                                             <div class="product-name">
                                                 <strong><?php echo esc_html($item->get_name()); ?></strong>
@@ -347,7 +533,10 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                             <span class="item-quantity-badge"><?php echo esc_html($item_quantity); ?></span>
                                         </td>
                                         <td class="column-price">
-                                            <span class="item-price"><?php echo wc_price($unit_price); ?></span>
+                                            <span class="item-price-actual"><?php echo wc_price($unit_price_actual); ?></span>
+                                        </td>
+                                        <td class="column-price">
+                                            <span class="item-price"><?php echo wc_price($unit_price_discounted); ?></span>
                                         </td>
                                         <td class="column-total">
                                             <strong class="item-total"><?php echo wc_price($item_total); ?></strong>
@@ -377,15 +566,19 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                     if ($has_bundled_items):
                                         foreach ($bundled_items[$item_id] as $bundled_item_id => $bundled_item):
                                             $bundled_product = $bundled_item->get_product();
+                                            $bundled_item_subtotal = (float) $bundled_item->get_subtotal();
                                             $bundled_item_total = (float) $bundled_item->get_total();
                                             $bundled_item_quantity = (int) $bundled_item->get_quantity();
-                                            $bundled_unit_price = $bundled_item_quantity > 0 ? ($bundled_item_total / $bundled_item_quantity) : 0;
+                                            $bundled_unit_actual = $bundled_item_quantity > 0 ? ($bundled_item_subtotal / $bundled_item_quantity) : 0;
+                                            $bundled_unit_discounted = $bundled_item_quantity > 0 ? ($bundled_item_total / $bundled_item_quantity) : 0;
                                     ?>
                                             <tr class="polar-order-item-row is-bundled-item"
                                                 data-item-id="<?php echo esc_attr($bundled_item_id); ?>"
                                                 data-quantity="<?php echo esc_attr($bundled_item_quantity); ?>"
-                                                data-unit-price="<?php echo esc_attr(wc_format_decimal($bundled_unit_price)); ?>"
+                                                data-unit-price="<?php echo esc_attr(wc_format_decimal($bundled_unit_discounted)); ?>"
+                                                data-unit-price-actual="<?php echo esc_attr(wc_format_decimal($bundled_unit_actual)); ?>"
                                                 data-line-total="<?php echo esc_attr(wc_format_decimal($bundled_item_total)); ?>"
+                                                data-line-subtotal="<?php echo esc_attr(wc_format_decimal($bundled_item_subtotal)); ?>"
                                                 data-parent-item-id="<?php echo esc_attr($item_id); ?>">
                                                 <td class="column-product">
                                                     <div class="product-name" style="padding-left: 30px; position: relative;">
@@ -407,7 +600,10 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                                     <span class="item-quantity-badge"><?php echo esc_html($bundled_item_quantity); ?></span>
                                                 </td>
                                                 <td class="column-price">
-                                                    <span class="item-price"><?php echo wc_price($bundled_unit_price); ?></span>
+                                                    <span class="item-price-actual"><?php echo wc_price($bundled_unit_actual); ?></span>
+                                                </td>
+                                                <td class="column-price">
+                                                    <span class="item-price"><?php echo wc_price($bundled_unit_discounted); ?></span>
                                                 </td>
                                                 <td class="column-total">
                                                     <strong class="item-total"><?php echo wc_price($bundled_item_total); ?></strong>
@@ -438,7 +634,7 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="polar-empty-state">
+                                    <td colspan="6" class="polar-empty-state">
                                         <div class="empty-state-content">
                                             <span class="dashicons dashicons-cart"></span>
                                             <p><?php esc_html_e('No items in this order.', 'pexpress'); ?></p>
@@ -449,7 +645,7 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" class="total-label"><?php esc_html_e('Order Total', 'pexpress'); ?></td>
+                                <td colspan="4" class="total-label"><?php esc_html_e('Order Total', 'pexpress'); ?></td>
                                 <td colspan="2" class="total-value">
                                     <strong id="polar-order-total"><?php echo wp_kses_post($order_total); ?></strong>
                                 </td>
@@ -462,59 +658,36 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                 <div class="polar-add-item-section polar-add-product-inline-section">
                     <h3><?php esc_html_e('Add Products to Order', 'pexpress'); ?></h3>
                     <p class="polar-add-item-help">
-                        <?php esc_html_e('Search and select products to add to this order.xx', 'pexpress'); ?>
+                        <?php esc_html_e('Choose a product and quantity, then add to order.', 'pexpress'); ?>
                     </p>
 
                     <form class="polar-add-product-form">
-                        <table class="widefat polar-modal-products-table">
+                        <table class="widefat polar-modal-products-table polar-add-product-table">
                             <thead>
                                 <tr>
-                                    <th class="polar-modal-th-product">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            style="vertical-align: middle; margin-right: 6px;">
-                                            <path
-                                                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round" />
-                                        </svg>
-                                        <?php esc_html_e('Product', 'woocommerce'); ?>
-                                    </th>
-                                    <th class="polar-modal-th-quantity">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            style="vertical-align: middle; margin-right: 6px;">
-                                            <path
-                                                d="M3 6H21M6 6V4C6 3.46957 6.21071 2.96086 6.58579 2.58579C6.96086 2.21071 7.46957 2 8 2H16C16.5304 2 17.0391 2.21071 17.4142 2.58579C17.7893 2.96086 18 3.46957 18 4V6M6 6L5 20C5 20.5304 5.21071 21.0391 5.58579 21.4142C5.96086 21.7893 6.46957 22 7 22H17C17.5304 22 18.0391 21.7893 18.4142 21.4142C18.7893 21.0391 19 20.5304 19 20L18 6"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round" />
-                                        </svg>
-                                        <?php esc_html_e('Quantity', 'woocommerce'); ?>
-                                    </th>
+                                    <th class="polar-modal-th-product"><?php esc_html_e('Product', 'woocommerce'); ?></th>
+                                    <th class="polar-modal-th-quantity"><?php esc_html_e('Quantity', 'woocommerce'); ?></th>
                                     <th class="polar-modal-th-actions" style="width: 60px;"></th>
                                 </tr>
                             </thead>
-                            <?php
-                            $search_placeholder = esc_js(__('Search for a product&hellip;', 'woocommerce'));
-                            $remove_title = esc_js(__('Remove row', 'pexpress'));
-                            $row_template = '<tr data-row-index="{index}"><td class="polar-modal-td-product"><select id="polar-product-search-{index}" class="wc-product-search" name="item_id" data-allow_clear="true" data-display_stock="true" data-exclude_type="variable" data-placeholder="' . $search_placeholder . '"></select></td><td class="polar-modal-td-quantity"><input type="number" id="polar-quantity-{index}" step="1" min="1" max="9999" autocomplete="off" name="item_qty" value="1" placeholder="1" class="quantity polar-modal-quantity-field" /></td><td class="polar-modal-td-actions"><button type="button" class="polar-remove-row-btn" title="' . $remove_title . '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td></tr>';
-                            ?>
-                            <tbody data-row="<?php echo esc_attr($row_template); ?>">
+                            <tbody>
                                 <tr data-row-index="0">
                                     <td class="polar-modal-td-product">
-                                        <select id="polar-product-search-0" class="wc-product-search" name="item_id"
-                                            data-allow_clear="true" data-display_stock="true"
-                                            data-exclude_type="variable"
-                                            data-placeholder="<?php echo $search_placeholder; ?>"></select>
+                                        <select id="polar-product-dropdown-0" class="polar-product-dropdown" name="item_id">
+                                            <option value=""><?php esc_html_e('Select product...', 'pexpress'); ?></option>
+                                            <?php foreach ($products_dropdown as $pid => $pname) : ?>
+                                                <option value="<?php echo esc_attr($pid); ?>"><?php echo esc_html($pname); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </td>
                                     <td class="polar-modal-td-quantity">
                                         <input type="number" id="polar-quantity-0" step="1" min="1" max="9999"
                                             autocomplete="off" name="item_qty" value="1" placeholder="1"
-                                            class="quantity polar-modal-quantity-field" />
+                                            class="quantity polar-modal-quantity-field" style="max-width: 80px;" />
                                     </td>
                                     <td class="polar-modal-td-actions">
                                         <button type="button" class="polar-remove-row-btn" style="display: none;"
-                                            title="<?php echo $remove_title; ?>">
+                                            title="<?php esc_attr_e('Remove row', 'pexpress'); ?>">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                                 xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2"
@@ -794,6 +967,17 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                                 }
                                                 if (isset($value['price'])) {
                                                     $parts[] = 'Price: ' . wc_price($value['price']);
+                                                }
+                                                if (isset($value['address_1']) || isset($value['city']) || isset($value['postcode'])) {
+                                                    $addr = array_filter(array(
+                                                        isset($value['address_1']) ? $value['address_1'] : '',
+                                                        isset($value['address_2']) ? $value['address_2'] : '',
+                                                        isset($value['city']) ? $value['city'] : '',
+                                                        isset($value['state']) ? $value['state'] : '',
+                                                        isset($value['postcode']) ? $value['postcode'] : '',
+                                                        isset($value['country']) ? $value['country'] : '',
+                                                    ));
+                                                    $parts[] = 'Address: ' . implode(', ', $addr);
                                                 }
                                                 return implode(', ', $parts);
                                             };

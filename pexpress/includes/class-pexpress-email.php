@@ -497,7 +497,7 @@ class PExpress_Email
             $html_message .= '<p>' . nl2br(esc_html($message)) . '</p>';
             $html_message .= '</body></html>';
         } else {
-            // Message is already HTML, wrap in full HTML email structure
+            // Message is already HTML, wrap in full HTML email structure (without branded header bar)
             $html_message = '<!DOCTYPE html>
 <html>
 <head>
@@ -510,11 +510,6 @@ class PExpress_Email
         <tr>
             <td style="padding: 20px 0;">
                 <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-collapse: collapse; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <tr>
-                        <td style="padding: 40px 30px; background-color: #2271b1; color: #ffffff;">
-                            <h1 style="margin: 0; font-size: 24px;">' . esc_html(get_bloginfo('name')) . '</h1>
-                        </td>
-                    </tr>
                     <tr>
                         <td style="padding: 30px;">
                             ' . $message . '

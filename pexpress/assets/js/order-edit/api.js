@@ -145,6 +145,17 @@
         },
 
         /**
+         * Update order shipping address
+         * @param {number} orderId - Order ID
+         * @param {Object} data - Shipping fields (shipping_first_name, shipping_address_1, etc.)
+         * @param {Object} callbacks - Callback functions
+         * @returns {jqXHR}
+         */
+        updateShippingAddress: function (orderId, data, callbacks) {
+            return this.ajax('polar_update_shipping_address', Object.assign({ order_id: orderId }, data), callbacks);
+        },
+
+        /**
          * Confirm order
          * @param {number} orderId - Order ID
          * @param {string} nonce - Security nonce
