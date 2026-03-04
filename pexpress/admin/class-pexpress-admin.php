@@ -98,15 +98,27 @@ class PExpress_Admin
         $current_user = wp_get_current_user();
         $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
 
+        $support_portal_is_default = current_user_can('manage_woocommerce') || in_array('polar_support', $current_user->roles);
+
         // Set correct title based on page
         if ($page === 'polar-express') {
-            if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
-                return __('Agent Dashboard', 'pexpress') . $title;
-            } elseif (in_array('polar_delivery', $current_user->roles)) {
-                return __('Distribution Dashboard', 'pexpress') . $title;
-            } elseif (in_array('polar_support', $current_user->roles)) {
+            if ($support_portal_is_default) {
                 return __('Support Portal', 'pexpress') . $title;
             }
+            if (in_array('polar_hr', $current_user->roles)) {
+                return __('Agent Dashboard', 'pexpress') . $title;
+            }
+            if (in_array('polar_delivery', $current_user->roles)) {
+                return __('Distribution Dashboard', 'pexpress') . $title;
+            }
+            if (in_array('polar_fridge', $current_user->roles)) {
+                return __('Fridge (FSD) Dashboard', 'pexpress') . $title;
+            }
+            if (in_array('polar_distributor', $current_user->roles)) {
+                return __('Distributor Fulfills', 'pexpress') . $title;
+            }
+        } elseif ($page === 'polar-express-agent') {
+            return __('Agent Dashboard', 'pexpress') . $title;
         } elseif ($page === 'polar-express-delivery') {
             return __('Distribution Dashboard', 'pexpress') . $title;
         } elseif ($page === 'polar-express-support') {

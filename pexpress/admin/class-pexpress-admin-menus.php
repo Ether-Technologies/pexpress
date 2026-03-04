@@ -51,10 +51,13 @@ class PExpress_Admin_Menus
         $main_capability = 'read'; // Basic read capability
 
         // Determine which dashboard to show based on role
-        // Priority: Agency (polar_hr) always takes precedence, even if user has other roles
+        // Users with manage_woocommerce or polar_support get Support Portal as default.
+        // Users with only polar_hr (no shop manager/support) keep Agent Dashboard as default.
         $main_page_callback = 'render_agency_dashboard';
-        if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
-            // Agent Dashboard - highest priority
+        $support_portal_is_default = current_user_can('manage_woocommerce') || in_array('polar_support', $current_user->roles);
+        if ($support_portal_is_default) {
+            $main_page_callback = 'render_support_dashboard';
+        } elseif (in_array('polar_hr', $current_user->roles)) {
             $main_page_callback = 'render_agency_dashboard';
         } elseif (in_array('polar_delivery', $current_user->roles)) {
             $main_page_callback = 'render_hr_dashboard';
@@ -62,23 +65,21 @@ class PExpress_Admin_Menus
             $main_page_callback = 'render_fridge_dashboard';
         } elseif (in_array('polar_distributor', $current_user->roles)) {
             $main_page_callback = 'render_distributor_dashboard';
-        } elseif (in_array('polar_support', $current_user->roles)) {
-            $main_page_callback = 'render_support_dashboard';
         }
 
-        // Set the main menu title and label based on role
+        // Set the main menu title and label based on role (page title; sidebar label stays "Polar Express")
         $main_menu_title = __('Polar Express', 'pexpress');
-        $main_menu_label = __('Polar Express', 'pexpress');
 
-        if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
+        if ($support_portal_is_default) {
+            $main_menu_title = __('Support Portal', 'pexpress');
+        } elseif (in_array('polar_hr', $current_user->roles)) {
             $main_menu_title = __('Agent Dashboard', 'pexpress');
-            $main_menu_label = __('Agent Dashboard', 'pexpress');
         } elseif (in_array('polar_delivery', $current_user->roles)) {
             $main_menu_title = __('Distribution Dashboard', 'pexpress');
-            $main_menu_label = __('Distribution Dashboard', 'pexpress');
-        } elseif (in_array('polar_support', $current_user->roles)) {
-            $main_menu_title = __('Support Portal', 'pexpress');
-            $main_menu_label = __('Support Portal', 'pexpress');
+        } elseif (in_array('polar_fridge', $current_user->roles)) {
+            $main_menu_title = __('Fridge (FSD) Dashboard', 'pexpress');
+        } elseif (in_array('polar_distributor', $current_user->roles)) {
+            $main_menu_title = __('Distributor Fulfills', 'pexpress');
         }
 
         add_menu_page(
@@ -103,14 +104,16 @@ class PExpress_Admin_Menus
             );
         }
 
-        // Add explicit submenu for Agent Dashboard so it appears in the submenu list
+        // Agent Dashboard submenu: when Support Portal is default, use slug polar-express-agent
+        // so parent slug is only used by main menu callback. For polar_hr-only, use polar-express so it remains default.
         if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
+            $agent_slug = $support_portal_is_default ? 'polar-express-agent' : 'polar-express';
             add_submenu_page(
                 'polar-express',
                 __('Agent Dashboard', 'pexpress'),
                 __('Agent Dashboard', 'pexpress'),
                 'read',
-                'polar-express',
+                $agent_slug,
                 array($this, 'render_agency_dashboard')
             );
         }
