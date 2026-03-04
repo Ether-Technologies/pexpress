@@ -24,19 +24,16 @@ This guide documents the renaming changes needed to align code with the updated 
 ### Core Files
 
 1. **Roles File**: `pexpress/roles.php`
-
    - Function: `polar_create_roles()` - Update role names and capabilities
    - Function: `polar_remove_roles()` - Update role removal
 
 2. **Admin Files**:
-
    - `pexpress/admin/class-pexpress-admin-menus.php` - Update menu labels
    - `pexpress/admin/class-pexpress-admin-settings.php` - Update role descriptions
    - `pexpress/admin/class-pexpress-admin-dashboards.php` - Update dashboard rendering
    - `pexpress/admin/class-pexpress-admin-roles.php` - Update role management
 
 3. **Templates**:
-
    - `pexpress/templates/hr-dashboard.php` - Already updated to "Agency Dashboard"
    - `pexpress/templates/delivery-dashboard.php` - Should be renamed to `hr-dashboard.php` or updated labels
 
@@ -99,8 +96,8 @@ This guide documents the renaming changes needed to align code with the updated 
 
 ### Already Updated (Display Labels)
 
-- ✅ Setup wizard: "HR Dashboard" → "Agency Dashboard"
-- ✅ HR Dashboard template: Title shows "Agency Dashboard"
+- ✅ Setup wizard: "Distribution Dashboard" → "Agency Dashboard"
+- ✅ Distribution Dashboard template: Title shows "Agency Dashboard"
 - ✅ Settings page: Role descriptions updated
 - ✅ History cards: "HR" label for delivery role
 

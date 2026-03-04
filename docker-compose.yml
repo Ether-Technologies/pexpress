@@ -54,6 +54,7 @@ services:
       - ./pexpress:/var/www/html/wp-content/plugins/polar-express
       - ../ethertech-wootp:/var/www/html/wp-content/plugins/ethertech-wootp
       - ../mailgun:/var/www/html/wp-content/plugins/mailgun
+      - ../handai:/var/www/html/wp-content/plugins/handai
       - ./docker/config/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
       - ./docker/config/apache-upload-limit.conf:/etc/apache2/conf-enabled/apache-upload-limit.conf:ro
     networks:

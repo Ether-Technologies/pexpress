@@ -171,8 +171,8 @@ Create pages in WordPress for each role dashboard:
 ### Using WP-CLI:
 
 ```bash
-# HR Dashboard
-docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="HR Dashboard" --post_content="[polar_hr]" --post_status=publish
+# Distribution Dashboard
+docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="Distribution Dashboard" --post_content="[polar_hr]" --post_status=publish
 
 # Delivery Dashboard
 docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="My Deliveries" --post_content="[polar_delivery]" --post_status=publish
@@ -190,7 +190,7 @@ docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="Su
 ### Using WordPress Admin:
 
 1. Go to **Pages** → **Add New**
-2. Set the title (e.g., "HR Dashboard")
+2. Set the title (e.g., "Distribution Dashboard")
 3. Add the shortcode in the content: `[polar_hr]`
 4. Publish the page
 

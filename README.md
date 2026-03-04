@@ -33,7 +33,7 @@ The Polar Express plugin is a custom WordPress extension designed to enhance man
 
 ### 2.1 High-Level Architecture
 
-- **Frontend**: WordPress admin panel with custom shortcodes for role-specific dashboards (e.g., `[polar_orders]` for lists, `[polar_assign]` for HR tasks). Mobile-responsive via CSS/JS.
+- **Frontend**: WordPress admin panel with custom shortcodes for role-specific dashboards (e.g., `[polar_orders]` for lists, `[polar_assign]` for Distribution tasks). Mobile-responsive via CSS/JS.
 - **Backend**: PHP-based plugin using WordPress hooks, WooCommerce REST API for data ops, and AJAX/WebSockets (via WordPress Heartbeat API) for real-time updates.
 - **Database**: Extend WooCommerce tables (`wp_woocommerce_order_items`, `wp_posts` for orders) with custom meta (e.g., `_delivery_assignment`, `_fridge_retrieval_date`) via WordPress post meta.
 - **Notifications**: WooCommerce emails + custom SMS (via external service like Twilio; integrate via API).

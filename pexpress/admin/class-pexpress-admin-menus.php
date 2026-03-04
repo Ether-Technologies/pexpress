@@ -74,8 +74,8 @@ class PExpress_Admin_Menus
             $main_menu_title = __('Agency Dashboard', 'pexpress');
             $main_menu_label = __('Agency Dashboard', 'pexpress');
         } elseif (in_array('polar_delivery', $current_user->roles)) {
-            $main_menu_title = __('HR Dashboard', 'pexpress');
-            $main_menu_label = __('HR Dashboard', 'pexpress');
+            $main_menu_title = __('Distribution Dashboard', 'pexpress');
+            $main_menu_label = __('Distribution Dashboard', 'pexpress');
         } elseif (in_array('polar_support', $current_user->roles)) {
             $main_menu_title = __('Support Portal', 'pexpress');
             $main_menu_label = __('Support Portal', 'pexpress');
@@ -103,13 +103,13 @@ class PExpress_Admin_Menus
             );
         }
 
-        // HR Dashboard (formerly Delivery) - Show for delivery users
+        // Distribution Dashboard (formerly Delivery) - Show for delivery users
         // Users with polar_hr can also access this if they have polar_delivery role
         if (in_array('polar_delivery', $current_user->roles)) {
             add_submenu_page(
                 'polar-express',
-                __('HR Dashboard', 'pexpress'),
-                __('HR Dashboard', 'pexpress'),
+                __('Distribution Dashboard', 'pexpress'),
+                __('Distribution Dashboard', 'pexpress'),
                 'read',
                 'polar-express-delivery',
                 array($this, 'render_hr_dashboard')
@@ -244,15 +244,15 @@ class PExpress_Admin_Menus
      */
     public function fix_menu_links_js()
     {
-        ?>
+?>
         <script>
-        (function(){
-            document.querySelectorAll('#adminmenu a[href*="page=handaipolar-express"]').forEach(function(a){
-                a.href = a.href.replace(/page=handaipolar-express/g, 'page=polar-express');
-            });
-        })();
+            (function() {
+                document.querySelectorAll('#adminmenu a[href*="page=handaipolar-express"]').forEach(function(a) {
+                    a.href = a.href.replace(/page=handaipolar-express/g, 'page=polar-express');
+                });
+            })();
         </script>
-        <?php
+    <?php
     }
 
     /**
@@ -287,7 +287,7 @@ class PExpress_Admin_Menus
     }
 
     /**
-     * Render HR Dashboard page
+     * Render Distribution Dashboard page
      */
     public function render_hr_dashboard()
     {
@@ -426,7 +426,7 @@ class PExpress_Admin_Menus
 
         $total_pages = ceil($total_logs / $per_page);
 
-?>
+    ?>
         <div class="wrap pexpress-email-log-wrap">
             <div style="background: linear-gradient(135deg, #2271b1 0%, #135e96 100%); padding: 30px; margin: -20px -20px 20px -20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; display: flex; align-items: center; gap: 12px;">

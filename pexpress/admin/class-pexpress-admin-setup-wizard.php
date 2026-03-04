@@ -126,7 +126,7 @@ class PExpress_Admin_Setup_Wizard
                 'page_suggestion' => '/hr-dashboard',
             ),
             'polar_delivery' => array(
-                'name' => __('HR Dashboard', 'pexpress'),
+                'name' => __('Distribution Dashboard', 'pexpress'),
                 'shortcode' => '[polar_delivery]',
                 'description' => __('Can view and update delivery status for assigned orders', 'pexpress'),
                 'page_suggestion' => '/my-deliveries',

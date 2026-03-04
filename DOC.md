@@ -99,7 +99,7 @@ update_post_meta($order_id, '\_polar_fridge_return_date', '2025-11-10');
     update_post_meta($order_id, '\_polar_assignment_note', 'Urgent – VIP client');
 6.  SHORTCODES (just paste on any page)
     php
-    // HR Dashboard
+    // Distribution Dashboard
     add_shortcode('polar_hr', function() {
     if (!current_user_can('polar_hr')) return 'Access denied';
     ob_start(); include POLAR_PATH . 'templates/hr-dashboard.php';

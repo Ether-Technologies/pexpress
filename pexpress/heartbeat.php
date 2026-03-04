@@ -192,7 +192,7 @@ class PExpress_Heartbeat
             }
         }
 
-        // HR tasks (orders needing assignment)
+        // Distribution tasks (orders needing assignment)
         if (in_array('polar_hr', $roles, true)) {
             $args = array(
                 'post_type'      => 'shop_order',

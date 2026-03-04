@@ -128,13 +128,48 @@ class PExpress_Core
 
     /**
      * Get scheduled meeting datetime
+     * Uses _polar_meeting_datetime when set (e.g. from HR dashboard). Otherwise falls back to
+     * billing/checkout event date and time meta (e.g. Select Date + Select Time from checkout).
      *
      * @param int $order_id Order ID.
      * @return string
      */
     public static function get_meeting_datetime($order_id)
     {
-        return (string) self::get_order_meta($order_id, '_polar_meeting_datetime');
+        $datetime = (string) self::get_order_meta($order_id, '_polar_meeting_datetime');
+        if ($datetime !== '') {
+            return $datetime;
+        }
+
+        // Fallback: build from separate date + time meta (checkout/billing event fields).
+        // WooCommerce order data meta box uses $order->get_meta('_' . 'billing_' . $key), so
+        // custom fields date_ and time_ are stored as _billing_date_ and _billing_time_.
+        $date_time_pairs = array(
+            array('_billing_date_', '_billing_time_'),
+            array('_date_', '_time_'),
+            array('date_', 'time_'),
+            array('_billing_event_date', '_billing_event_time'),
+            array('event_date', 'event_time'),
+            array('_billing_select_date', '_billing_select_time'),
+            array('select_date', 'select_time'),
+            array('_billing_date', '_billing_time'),
+        );
+        foreach ($date_time_pairs as $pair) {
+            $date_val = trim((string) self::get_order_meta($order_id, $pair[0]));
+            $time_val = trim((string) self::get_order_meta($order_id, $pair[1]));
+            if ($date_val !== '' && $time_val !== '') {
+                // Normalize time to H:i or H:i:s
+                if (preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $time_val)) {
+                    $time_val = strlen($time_val) === 5 ? $time_val . ':00' : $time_val;
+                }
+                $combined = $date_val . ' ' . $time_val;
+                if (strtotime($combined) !== false) {
+                    return $combined;
+                }
+            }
+        }
+
+        return '';
     }
 
     /**

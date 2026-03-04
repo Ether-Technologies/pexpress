@@ -103,12 +103,12 @@ class PExpress_Admin
             if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
                 return __('Agency Dashboard', 'pexpress') . $title;
             } elseif (in_array('polar_delivery', $current_user->roles)) {
-                return __('HR Dashboard', 'pexpress') . $title;
+                return __('Distribution Dashboard', 'pexpress') . $title;
             } elseif (in_array('polar_support', $current_user->roles)) {
                 return __('Support Portal', 'pexpress') . $title;
             }
         } elseif ($page === 'polar-express-delivery') {
-            return __('HR Dashboard', 'pexpress') . $title;
+            return __('Distribution Dashboard', 'pexpress') . $title;
         } elseif ($page === 'polar-express-support') {
             return __('Support Portal', 'pexpress') . $title;
         }

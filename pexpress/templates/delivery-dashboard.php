@@ -387,9 +387,9 @@ $completed_total = count($completed_orders);
         <div class="polar-header-content">
             <h1 class="polar-dashboard-title">
                 <span class="polar-title-icon">🚚</span>
-                <?php esc_html_e('HR Dashboard', 'pexpress'); ?>
+                <?php esc_html_e('Distribution Dashboard', 'pexpress'); ?>
             </h1>
-            <p class="polar-dashboard-subtitle"><?php esc_html_e('Manage your HR tasks and track orders', 'pexpress'); ?></p>
+            <p class="polar-dashboard-subtitle"><?php esc_html_e('Manage your Distribution tasks and track orders', 'pexpress'); ?></p>
         </div>
     </div>
 
@@ -431,7 +431,7 @@ $completed_total = count($completed_orders);
 
     <div class="polar-tasks-section">
         <div class="polar-section-header">
-            <h2 class="polar-section-title"><?php esc_html_e('My HR Tasks', 'pexpress'); ?></h2>
+            <h2 class="polar-section-title"><?php esc_html_e('My Distribution Tasks', 'pexpress'); ?></h2>
         </div>
 
         <div class="polar-tabs">
@@ -456,7 +456,7 @@ $completed_total = count($completed_orders);
                             </svg>
                         </div>
                         <h3><?php esc_html_e('No pending tasks', 'pexpress'); ?></h3>
-                        <p><?php esc_html_e('You have no pending HR tasks at this time.', 'pexpress'); ?></p>
+                        <p><?php esc_html_e('You have no pending Distribution tasks at this time.', 'pexpress'); ?></p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -479,7 +479,7 @@ $completed_total = count($completed_orders);
                         </svg>
                     </div>
                     <h3><?php esc_html_e('No orders in progress', 'pexpress'); ?></h3>
-                    <p><?php esc_html_e('No HR tasks are currently in progress.', 'pexpress'); ?></p>
+                    <p><?php esc_html_e('No Distribution tasks are currently in progress.', 'pexpress'); ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -501,7 +501,7 @@ $completed_total = count($completed_orders);
                         </svg>
                     </div>
                     <h3><?php esc_html_e('No completed orders yet', 'pexpress'); ?></h3>
-                    <p><?php esc_html_e('No HR tasks have been completed yet.', 'pexpress'); ?></p>
+                    <p><?php esc_html_e('No Distribution tasks have been completed yet.', 'pexpress'); ?></p>
                 </div>
             <?php endif; ?>
         </div>

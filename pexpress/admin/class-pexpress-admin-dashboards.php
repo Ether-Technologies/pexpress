@@ -41,6 +41,53 @@ class PExpress_Admin_Dashboards
             ),
         ));
 
+        // Get orders already assigned but not yet completed (for tabbed view).
+        // Use exact status slugs from WooCommerce order status dropdown; exclude terminal (complete/cancelled/refunded/failed/draft).
+        $in_progress_statuses = array(
+            'wc-pending',
+            'wc-processing',
+            'wc-on-hold',
+            'wc-polar-assigned',
+            'wc-polar-distributor-prep',
+            'wc-polar-out',
+            'wc-polar-distributor-complete',
+            'wc-polar-meet-point',
+            'wc-polar-delivery-location',
+            'wc-polar-service-progress',
+            'wc-polar-service-complete',
+            'wc-polar-fridge-drop',
+            'wc-polar-fridge-back',
+        );
+        $assigned_in_progress_orders = wc_get_orders(array(
+            'status' => $in_progress_statuses,
+            'limit' => 100,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ));
+        $terminal_statuses = array('wc-completed', 'wc-cancelled', 'wc-refunded', 'wc-failed', 'wc-checkout-draft', 'wc-polar-complete', 'wc-polar-delivered', 'wc-polar-fridge-returned');
+        $assigned_in_progress_orders = array_filter($assigned_in_progress_orders, function ($order) use ($terminal_statuses) {
+            if (!$order || !is_a($order, 'WC_Order')) {
+                return false;
+            }
+            $status = $order->get_status();
+            $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
+            if (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses, true)) {
+                return false;
+            }
+            // Include order if it is not still "pending assignment" (show all non-pending in In Progress, with or without assignees)
+            $needs = PExpress_Core::get_order_meta($order->get_id(), '_polar_needs_assignment');
+            return $needs !== 'yes';
+        });
+        $assigned_in_progress_orders = array_values($assigned_in_progress_orders);
+
+        // Get completed orders (exclude cancelled)
+        $completed_orders = wc_get_orders(array(
+            'status' => array('completed', 'wc-polar-complete', 'wc-polar-delivered', 'wc-polar-fridge-returned', 'wc-polar-service-complete', 'wc-polar-customer-served'),
+            'limit' => 30,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ));
+
         // Get all HR (formerly delivery), fridge, and distributor users
         $hr_users = get_users(array('role' => 'polar_delivery'));
         $fridge_users = get_users(array('role' => 'polar_fridge'));
@@ -50,7 +97,7 @@ class PExpress_Admin_Dashboards
     }
 
     /**
-     * Render HR Dashboard page (formerly Delivery)
+     * Render Distribution Dashboard page (formerly Delivery)
      */
     public function render_hr_dashboard()
     {
