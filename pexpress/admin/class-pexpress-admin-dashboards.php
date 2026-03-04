@@ -173,7 +173,7 @@ class PExpress_Admin_Dashboards
     }
 
     /**
-     * Render Fridge Dashboard page
+     * Render Fridge (FSD) Dashboard page
      */
     public function render_fridge_dashboard()
     {

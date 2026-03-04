@@ -528,7 +528,6 @@ $distributor_count = count($distributor_users);
                                 <?php endif; ?>
                             </div>
                             <div class="order-actions" style="margin-top: 10px;">
-                                <a href="<?php echo esc_url(admin_url('post.php?post=' . $order_id . '&action=edit')); ?>" class="polar-btn polar-btn-secondary" target="_blank"><?php esc_html_e('Edit Order', 'pexpress'); ?></a>
                                 <button type="button"
                                     style="background-color: var(--polar-primary); color: #fff; border-radius: var(--polar-radius-md);"
                                     class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('View Tracking', 'pexpress'); ?></button>
@@ -706,12 +705,17 @@ $distributor_count = count($distributor_users);
     <div class="polar-modal-overlay"></div>
     <div class="polar-modal-content polar-tracking-modal-content">
         <button type="button" class="polar-modal-close polar-tracking-modal-close" aria-label="<?php esc_attr_e('Close', 'pexpress'); ?>">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
         </button>
         <header class="polar-tracking-modal-header">
             <div class="polar-tracking-modal-title-wrap">
                 <span class="polar-tracking-modal-icon" aria-hidden="true">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
                 </span>
                 <div>
                     <h2 class="polar-tracking-modal-title"><?php esc_html_e('Order tracking', 'pexpress'); ?></h2>
@@ -839,6 +843,7 @@ $distributor_count = count($distributor_users);
                 div.textContent = String(s);
                 return div.innerHTML;
             }
+
             function stageIcon(label) {
                 var l = (label || '').toLowerCase();
                 if (l.indexOf('distribution') !== -1 || l.indexOf('agency') !== -1) return 'assign';
@@ -891,9 +896,19 @@ $distributor_count = count($distributor_users);
                         html += '</div>';
                     } else if (data.statuses) {
                         var s = data.statuses;
-                        var stageLabels = { hr: '<?php echo esc_js(__('Distribution', 'pexpress')); ?>', delivery: '<?php echo esc_js(__('SR', 'pexpress')); ?>', fridge: '<?php echo esc_js(__('Fridge Dept (FSD)', 'pexpress')); ?>', distributor: '<?php echo esc_js(__('Product Provider', 'pexpress')); ?>' };
+                        var stageLabels = {
+                            hr: '<?php echo esc_js(__('Distribution', 'pexpress')); ?>',
+                            delivery: '<?php echo esc_js(__('SR', 'pexpress')); ?>',
+                            fridge: '<?php echo esc_js(__('Fridge Dept (FSD)', 'pexpress')); ?>',
+                            distributor: '<?php echo esc_js(__('Product Provider', 'pexpress')); ?>'
+                        };
                         var order = ['hr', 'delivery', 'fridge', 'distributor'];
-                        var stageIcons = { hr: 'assign', delivery: 'delivery', fridge: 'fridge', distributor: 'truck' };
+                        var stageIcons = {
+                            hr: 'assign',
+                            delivery: 'delivery',
+                            fridge: 'fridge',
+                            distributor: 'truck'
+                        };
                         html = '<div class="polar-tracking-timeline">';
                         order.forEach(function(key, idx) {
                             if (!s[key]) return;

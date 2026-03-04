@@ -177,7 +177,7 @@ docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="Di
 # Delivery Dashboard
 docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="My Deliveries" --post_content="[polar_delivery]" --post_status=publish
 
-# Fridge Dashboard
+# Fridge (FSD) Dashboard
 docker exec -it pexpress-wp-cli wp post create --post_type=page --post_title="Fridge Tasks" --post_content="[polar_fridge]" --post_status=publish
 
 # Distributor Dashboard

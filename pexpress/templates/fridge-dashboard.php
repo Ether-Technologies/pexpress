@@ -380,7 +380,7 @@ if (!function_exists('pexpress_render_fridge_task_card')) {
         <div class="polar-header-content">
             <h1 class="polar-dashboard-title">
                 <span class="polar-title-icon">🧊</span>
-                <?php esc_html_e('Fridge Dashboard', 'pexpress'); ?>
+                <?php esc_html_e('Fridge (FSD) Dashboard', 'pexpress'); ?>
             </h1>
             <p class="polar-dashboard-subtitle"><?php esc_html_e('Manage fridge collections and returns', 'pexpress'); ?></p>
         </div>

@@ -116,12 +116,12 @@ class PExpress_Admin_Menus
             );
         }
 
-        // Fridge Dashboard
+        // Fridge (FSD) Dashboard
         if (in_array('polar_fridge', $current_user->roles) || current_user_can('manage_woocommerce')) {
             add_submenu_page(
                 'polar-express',
-                __('Fridge Dashboard', 'pexpress'),
-                __('Fridge Dashboard', 'pexpress'),
+                __('Fridge (FSD) Dashboard', 'pexpress'),
+                __('Fridge (FSD) Dashboard', 'pexpress'),
                 'read',
                 'polar-express-fridge',
                 array($this, 'render_fridge_dashboard')
@@ -296,7 +296,7 @@ class PExpress_Admin_Menus
     }
 
     /**
-     * Render Fridge Dashboard page
+     * Render Fridge (FSD) Dashboard page
      */
     public function render_fridge_dashboard()
     {
