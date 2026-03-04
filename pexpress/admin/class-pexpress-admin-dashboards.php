@@ -19,7 +19,7 @@ class PExpress_Admin_Dashboards
 {
 
     /**
-     * Render Agency Dashboard page (formerly HR)
+     * Render Agent Dashboard page (formerly HR)
      */
     public function render_agency_dashboard()
     {
@@ -289,7 +289,7 @@ class PExpress_Admin_Dashboards
             $recent_orders = array();
         }
 
-        // Split into tabbed groups like Agency Dashboard
+        // Split into tabbed groups like Agent Dashboard
         $pending_orders = array();
         $in_progress_orders = array();
         $completed_orders = array();

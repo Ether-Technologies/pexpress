@@ -34,7 +34,7 @@ This guide documents the renaming changes needed to align code with the updated 
    - `pexpress/admin/class-pexpress-admin-roles.php` - Update role management
 
 3. **Templates**:
-   - `pexpress/templates/hr-dashboard.php` - Already updated to "Agency Dashboard"
+   - `pexpress/templates/hr-dashboard.php` - Already updated to "Agent Dashboard"
    - `pexpress/templates/delivery-dashboard.php` - Should be renamed to `hr-dashboard.php` or updated labels
 
 4. **Shortcodes**:
@@ -96,8 +96,8 @@ This guide documents the renaming changes needed to align code with the updated 
 
 ### Already Updated (Display Labels)
 
-- ✅ Setup wizard: "Distribution Dashboard" → "Agency Dashboard"
-- ✅ Distribution Dashboard template: Title shows "Agency Dashboard"
+- ✅ Setup wizard: "Distribution Dashboard" → "Agent Dashboard"
+- ✅ Distribution Dashboard template: Title shows "Agent Dashboard"
 - ✅ Settings page: Role descriptions updated
 - ✅ History cards: "HR" label for delivery role
 

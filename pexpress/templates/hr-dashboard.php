@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Agency Dashboard Template
- * This template is exclusively for Agency Dashboard functionality.
- * It only displays Agency Dashboard content, regardless of user roles.
+ * Agent Dashboard Template
+ * This template is exclusively for Agent Dashboard functionality.
+ * It only displays Agent Dashboard content, regardless of user roles.
  *
  * @package PExpress
  * @since 1.0.0
@@ -22,7 +22,7 @@ $assigned_in_progress_orders = isset($assigned_in_progress_orders) ? $assigned_i
 $completed_orders = isset($completed_orders) ? $completed_orders : array();
 $assigned_count = count($assigned_in_progress_orders);
 $completed_count = count($completed_orders);
-// Agency Dashboard only uses hr_users (SR Personnel)
+// Agent Dashboard only uses hr_users (SR Personnel)
 $hr_count = isset($hr_users) ? count($hr_users) : 0;
 $fridge_count = count($fridge_users);
 $distributor_count = count($distributor_users);
@@ -33,7 +33,7 @@ $distributor_count = count($distributor_users);
         <div class="polar-header-content">
             <h1 class="polar-dashboard-title">
                 <span class="polar-title-icon">👥</span>
-                <?php esc_html_e('Agency Dashboard - Task Assignment', 'pexpress'); ?>
+                <?php esc_html_e('Agent Dashboard - Task Assignment', 'pexpress'); ?>
             </h1>
             <p class="polar-dashboard-subtitle"><?php esc_html_e('Assign orders to SR, fridge, and product provider teams', 'pexpress'); ?></p>
         </div>
@@ -306,7 +306,7 @@ $distributor_count = count($distributor_users);
                                             <select name="delivery_user_id" class="polar-select">
                                                 <option value=""><?php esc_html_e('Select...', 'pexpress'); ?></option>
                                                 <?php
-                                                // Agency Dashboard only uses hr_users (SR Personnel)
+                                                // Agent Dashboard only uses hr_users (SR Personnel)
                                                 $users_for_select = isset($hr_users) ? $hr_users : array();
                                                 foreach ($users_for_select as $user) : ?>
                                                     <option value="<?php echo esc_attr($user->ID); ?>">
@@ -382,7 +382,7 @@ $distributor_count = count($distributor_users);
 
                                     <div style="display: flex; gap: 10px; align-items: center;">
                                         <?php
-                                        // Agency Dashboard: Check if order is already proceeded
+                                        // Agent Dashboard: Check if order is already proceeded
                                         $order_proceeded = PExpress_Core::get_order_meta($order_id, '_polar_order_proceeded');
                                         $agency_status = PExpress_Core::get_role_status($order_id, 'agency');
                                         ?>

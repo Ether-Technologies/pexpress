@@ -93,7 +93,7 @@ function pexpress_enqueue_shortcode_scripts()
 }
 
 /**
- * Agency Dashboard Shortcode (formerly HR)
+ * Agent Dashboard Shortcode (formerly HR)
  */
 add_shortcode('polar_hr', 'polar_agency_dashboard_shortcode');
 function polar_agency_dashboard_shortcode($atts)
@@ -537,7 +537,7 @@ function polar_order_tracking_shortcode($atts)
 }
 
 /**
- * Agency Dashboard Shortcode (Alias for polar_hr)
+ * Agent Dashboard Shortcode (Alias for polar_hr)
  */
 add_shortcode('polar_agency', 'polar_agency_dashboard_shortcode');
 

@@ -87,7 +87,7 @@
     }
 
     /**
-     * Initialize assignment forms (Agency Dashboard)
+     * Initialize assignment forms (Agent Dashboard)
      */
     function initAssignmentForms() {
         $('.polar-assign-form').on('submit', function (e) {
@@ -182,12 +182,12 @@
                             message = 'Status updated to: ' + response.data.new_status;
                         }
                         showNotice(message, 'success');
-                        
+
                         // Determine which tab the order should appear in after status update
                         var $taskItem = $form.closest('.polar-task-item');
                         var newStatus = $button.val();
                         var targetTab = 'pending';
-                        
+
                         // Map status to target tab based on role
                         if ($form.hasClass('polar-fridge-status-form')) {
                             if (newStatus === 'fridge_returned') {
@@ -208,7 +208,7 @@
                                 targetTab = 'in-progress';
                             }
                         }
-                        
+
                         // Reload page with cache-bust and preserve target tab
                         setTimeout(function () {
                             var baseUrl = location.href.split('?')[0].split('#')[0];
@@ -234,7 +234,7 @@
     }
 
     /**
-     * Initialize Agency Dashboard filters and search (uses delegation so it works when content loads later)
+     * Initialize Agent Dashboard filters and search (uses delegation so it works when content loads later)
      */
     function initAgencyDashboardFilters() {
         function getAgencyFilterContext() {
@@ -393,17 +393,17 @@
             if ($tab.length) {
                 var $tabs = $tab.closest('.polar-tabs').find('.polar-tab');
                 var $contents = $tab.closest('.polar-tasks-section, .polar-orders-section').find('.polar-tab-content');
-                
+
                 // Remove active class from all tabs and contents
                 $tabs.removeClass('active');
                 $contents.removeClass('active');
-                
+
                 // Add active class to target tab and corresponding content
                 $tab.addClass('active');
                 $('#tab-' + tabId).addClass('active');
             }
         }
-        
+
         $('.polar-tab').on('click', function () {
             var $tab = $(this);
             var tabId = $tab.data('tab');

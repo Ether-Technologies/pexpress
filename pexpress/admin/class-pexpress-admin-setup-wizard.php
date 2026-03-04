@@ -120,7 +120,7 @@ class PExpress_Admin_Setup_Wizard
         // Shortcodes for step 3
         $shortcodes = array(
             'polar_hr' => array(
-                'name' => __('Agency Dashboard', 'pexpress'),
+                'name' => __('Agent Dashboard', 'pexpress'),
                 'shortcode' => '[polar_hr]',
                 'description' => __('Full access to assign orders and manage operations', 'pexpress'),
                 'page_suggestion' => '/hr-dashboard',
@@ -539,9 +539,9 @@ class PExpress_Admin_Setup_Wizard
                         <div class="pexpress-next-step-card">
                             <span class="dashicons dashicons-clipboard"></span>
                             <h4><?php esc_html_e('Start Managing Orders', 'pexpress'); ?></h4>
-                            <p><?php esc_html_e('Go to Agency Dashboard to start assigning orders to your team', 'pexpress'); ?></p>
+                            <p><?php esc_html_e('Go to Agent Dashboard to start assigning orders to your team', 'pexpress'); ?></p>
                             <a href="<?php echo esc_url(admin_url('admin.php?page=polar-express')); ?>" class="pexpress-btn pexpress-btn-primary">
-                                <?php esc_html_e('Open Agency Dashboard', 'pexpress'); ?>
+                                <?php esc_html_e('Open Agent Dashboard', 'pexpress'); ?>
                             </a>
                         </div>
                         <div class="pexpress-next-step-card">

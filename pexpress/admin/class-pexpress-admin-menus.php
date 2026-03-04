@@ -54,7 +54,7 @@ class PExpress_Admin_Menus
         // Priority: Agency (polar_hr) always takes precedence, even if user has other roles
         $main_page_callback = 'render_agency_dashboard';
         if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
-            // Agency Dashboard - highest priority
+            // Agent Dashboard - highest priority
             $main_page_callback = 'render_agency_dashboard';
         } elseif (in_array('polar_delivery', $current_user->roles)) {
             $main_page_callback = 'render_hr_dashboard';
@@ -71,8 +71,8 @@ class PExpress_Admin_Menus
         $main_menu_label = __('Polar Express', 'pexpress');
 
         if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
-            $main_menu_title = __('Agency Dashboard', 'pexpress');
-            $main_menu_label = __('Agency Dashboard', 'pexpress');
+            $main_menu_title = __('Agent Dashboard', 'pexpress');
+            $main_menu_label = __('Agent Dashboard', 'pexpress');
         } elseif (in_array('polar_delivery', $current_user->roles)) {
             $main_menu_title = __('Distribution Dashboard', 'pexpress');
             $main_menu_label = __('Distribution Dashboard', 'pexpress');
@@ -91,12 +91,24 @@ class PExpress_Admin_Menus
             56
         );
 
-        // Add explicit submenu for Agency Dashboard so it appears in the submenu list
+        // Support Portal - first in list (show for support and shop managers)
+        if (in_array('polar_support', $current_user->roles) || current_user_can('manage_woocommerce')) {
+            add_submenu_page(
+                'polar-express',
+                __('Support Portal', 'pexpress'),
+                __('Support Portal', 'pexpress'),
+                'read',
+                'polar-express-support',
+                array($this, 'render_support_dashboard')
+            );
+        }
+
+        // Add explicit submenu for Agent Dashboard so it appears in the submenu list
         if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
             add_submenu_page(
                 'polar-express',
-                __('Agency Dashboard', 'pexpress'),
-                __('Agency Dashboard', 'pexpress'),
+                __('Agent Dashboard', 'pexpress'),
+                __('Agent Dashboard', 'pexpress'),
                 'read',
                 'polar-express',
                 array($this, 'render_agency_dashboard')
@@ -137,18 +149,6 @@ class PExpress_Admin_Menus
                 'read',
                 'polar-express-distributor',
                 array($this, 'render_distributor_dashboard')
-            );
-        }
-
-        // Support Dashboard
-        if (in_array('polar_support', $current_user->roles) || current_user_can('manage_woocommerce')) {
-            add_submenu_page(
-                'polar-express',
-                __('Support Portal', 'pexpress'),
-                __('Support Portal', 'pexpress'),
-                'read',
-                'polar-express-support',
-                array($this, 'render_support_dashboard')
             );
         }
 
@@ -278,7 +278,7 @@ class PExpress_Admin_Menus
     }
 
     /**
-     * Render Agency Dashboard page
+     * Render Agent Dashboard page
      */
     public function render_agency_dashboard()
     {

@@ -101,7 +101,7 @@ class PExpress_Admin
         // Set correct title based on page
         if ($page === 'polar-express') {
             if (in_array('polar_hr', $current_user->roles) || current_user_can('manage_woocommerce')) {
-                return __('Agency Dashboard', 'pexpress') . $title;
+                return __('Agent Dashboard', 'pexpress') . $title;
             } elseif (in_array('polar_delivery', $current_user->roles)) {
                 return __('Distribution Dashboard', 'pexpress') . $title;
             } elseif (in_array('polar_support', $current_user->roles)) {

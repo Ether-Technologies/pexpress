@@ -29,7 +29,7 @@ class PExpress_Admin_Pages
 
         $shortcodes = array(
             'polar_agency' => array(
-                'name' => __('Agency Dashboard', 'pexpress'),
+                'name' => __('Agent Dashboard', 'pexpress'),
                 'shortcode' => '[polar_agency]',
                 'alias' => '[polar_hr]',
                 'description' => __('Full access to assign orders and manage operations', 'pexpress'),
@@ -242,7 +242,7 @@ class PExpress_Admin_Pages
                 <div class="polar-setup-step">
                     <h3><?php esc_html_e('Order Processing Flow', 'pexpress'); ?></h3>
                     <ol>
-                        <li><strong><?php esc_html_e('Order Received:', 'pexpress'); ?></strong> <?php esc_html_e('New orders appear in Agency Dashboard for assignment', 'pexpress'); ?></li>
+                        <li><strong><?php esc_html_e('Order Received:', 'pexpress'); ?></strong> <?php esc_html_e('New orders appear in Agent Dashboard for assignment', 'pexpress'); ?></li>
                         <li><strong><?php esc_html_e('Agency Assignment:', 'pexpress'); ?></strong> <?php esc_html_e('Agency assigns orders to SR (Sales Representative), Fridge Provider, and Product Provider', 'pexpress'); ?></li>
                         <li><strong><?php esc_html_e('Product Provider Fulfills:', 'pexpress'); ?></strong> <?php esc_html_e('Product Provider marks orders as fulfilled', 'pexpress'); ?></li>
                         <li><strong><?php esc_html_e('Fridge Collection:', 'pexpress'); ?></strong> <?php esc_html_e('Fridge Provider collects and later returns the fridge', 'pexpress'); ?></li>
@@ -264,7 +264,7 @@ class PExpress_Admin_Pages
                         <li><?php esc_html_e('Ensure all team members have WordPress user accounts before assigning roles', 'pexpress'); ?></li>
                         <li><?php esc_html_e('Test the workflow with a test order before going live', 'pexpress'); ?></li>
                         <li><?php esc_html_e('Keep SMS credentials secure and never share them publicly', 'pexpress'); ?></li>
-                        <li><?php esc_html_e('Regularly check the Agency Dashboard for pending assignments', 'pexpress'); ?></li>
+                        <li><?php esc_html_e('Regularly check the Agent Dashboard for pending assignments', 'pexpress'); ?></li>
                     </ul>
                 </div>
             </div>
@@ -322,15 +322,15 @@ class PExpress_Admin_Pages
                     __('Combined "Assign Order" and "Proceed" buttons into single "Assign & Proceed Order" action', 'pexpress'),
                 ),
                 'improved' => array(
-                    __('Agency Dashboard now exclusively shows Agency content regardless of user roles', 'pexpress'),
+                    __('Agent Dashboard now exclusively shows Agency content regardless of user roles', 'pexpress'),
                     __('Order tracking progress bar logic for better stage visualization', 'pexpress'),
                     __('Order confirmation workflow clarity in customer tracking', 'pexpress'),
                 ),
                 'fixed' => array(
-                    __('Fixed confusion between Assign Order and Proceed buttons in Agency Dashboard', 'pexpress'),
+                    __('Fixed confusion between Assign Order and Proceed buttons in Agent Dashboard', 'pexpress'),
                     __('Fixed order tracking showing "Order Confirmed" before support agent confirmation', 'pexpress'),
                     __('Fixed active stage highlighting in customer order tracking', 'pexpress'),
-                    __('Fixed role priority in admin menu to ensure Agency Dashboard shows for polar_hr users', 'pexpress'),
+                    __('Fixed role priority in admin menu to ensure Agent Dashboard shows for polar_hr users', 'pexpress'),
                 ),
             ),
             '1.0.5' => array(
