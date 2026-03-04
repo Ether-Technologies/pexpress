@@ -1046,6 +1046,78 @@ body.polar-order-edit-page #wpbody-content {
   color: #9ca3af;
 }
 
+/* Responsive: View Tracking modal – stage cards */
+@media (max-width: 768px) {
+  .polar-hr-dashboard .polar-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .polar-hr-dashboard .polar-stat-card {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .polar-hr-dashboard .polar-stat-card .stat-card-value {
+    font-size: 22px;
+  }
+
+  .polar-hr-dashboard .polar-stat-card .stat-card-label {
+    font-size: 12px;
+  }
+
+  #polar-tracking-modal .polar-modal-content {
+    max-width: 100%;
+    margin: 10px;
+    padding: 16px;
+  }
+
+  .polar-tracking-modal-statuses.polar-stage-wise .polar-tracking-status-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .polar-tracking-stage-info {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .polar-tracking-contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    word-break: break-word;
+  }
+
+  .polar-tracking-contact-info .polar-tracking-phone {
+    margin-left: 0;
+  }
+
+  .polar-tracking-contact-info .polar-tracking-update {
+    margin-top: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .polar-hr-dashboard .polar-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .polar-hr-dashboard .polar-order-item .order-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .polar-hr-dashboard .assign-row {
+    flex-direction: column;
+  }
+
+  .polar-hr-dashboard .assign-field {
+    min-width: 100%;
+  }
+}
+
 /* Real-time Update Indicator */
 .polar-update-indicator {
   display: inline-block;

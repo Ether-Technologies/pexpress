@@ -14,6 +14,7 @@
         initAssignmentForms();
         initStatusUpdateForms();
         initSupportDashboardFilters();
+        initAgencyDashboardFilters();
         initTabs();
         initHistoryRowExpansion();
         initProceedOrder();
@@ -233,6 +234,86 @@
     }
 
     /**
+     * Initialize Agency Dashboard filters and search
+     */
+    function initAgencyDashboardFilters() {
+        var $dashboard = $('.polar-hr-dashboard');
+        var $statusFilter = $('#polar-agency-status-filter');
+        var $searchInput = $('#polar-agency-search');
+        var $ordersSection = $dashboard.find('.polar-orders-section');
+
+        if (!$dashboard.length || !$ordersSection.length) {
+            return;
+        }
+        if (!$statusFilter.length || !$searchInput.length) {
+            return;
+        }
+
+        function filterAgencyOrders() {
+            var statusValue = ($statusFilter.val() || '').trim();
+            var searchValue = ($searchInput.val() || '').toLowerCase().trim();
+            var $activeContent = $ordersSection.find('.polar-tab-content.active');
+            var $orders = $activeContent.find('.polar-order-item');
+            var visibleCount = 0;
+
+            $orders.each(function () {
+                var $order = $(this);
+                var orderStatus = ($order.attr('data-status') || '').trim();
+                var orderId = $order.attr('data-order-id') || '';
+                var orderText = $order.text().toLowerCase();
+                var customerName = ($order.find('.customer-name').text() || '').toLowerCase();
+                var phoneNumber = ($order.find('.phone-number').text() || '').toLowerCase();
+
+                var normalizedOrderStatus = String(orderStatus).replace(/^wc-/, '');
+                var normalizedFilterStatus = String(statusValue).replace(/^wc-/, '');
+
+                var statusMatch = !statusValue ||
+                    orderStatus === statusValue ||
+                    orderStatus === 'wc-' + normalizedFilterStatus ||
+                    normalizedOrderStatus === normalizedFilterStatus ||
+                    normalizedOrderStatus === statusValue;
+
+                var searchMatch = !searchValue ||
+                    orderText.indexOf(searchValue) !== -1 ||
+                    String(orderId).indexOf(searchValue) !== -1 ||
+                    customerName.indexOf(searchValue) !== -1 ||
+                    phoneNumber.indexOf(searchValue) !== -1;
+
+                if (statusMatch && searchMatch) {
+                    $order.show();
+                    visibleCount++;
+                } else {
+                    $order.hide();
+                }
+            });
+
+            var $emptyState = $activeContent.find('.polar-filter-empty-state');
+            if (visibleCount === 0 && $orders.length > 0) {
+                if (!$emptyState.length) {
+                    $activeContent.append(
+                        '<div class="polar-empty-state polar-filter-empty-state">' +
+                        '<p>No orders match your filters.</p>' +
+                        '</div>'
+                    );
+                }
+                $activeContent.find('.polar-filter-empty-state').show();
+            } else {
+                $activeContent.find('.polar-filter-empty-state').hide();
+            }
+        }
+
+        $statusFilter.on('change', filterAgencyOrders);
+        $searchInput.on('input', function () {
+            clearTimeout($searchInput.data('timeout'));
+            $searchInput.data('timeout', setTimeout(filterAgencyOrders, 300));
+        });
+        $dashboard.on('click', '.polar-tab', function () {
+            setTimeout(filterAgencyOrders, 80);
+        });
+        filterAgencyOrders();
+    }
+
+    /**
      * Initialize tabs functionality
      */
     function initTabs() {
@@ -267,7 +348,12 @@
             // Add active class to clicked tab and corresponding content
             $tab.addClass('active');
             $('#tab-' + tabId).addClass('active');
-            
+
+            // Re-apply Support dashboard filter when switching tabs
+            if ($('#polar-support-orders').length) {
+                $('#polar-status-filter').trigger('change');
+            }
+
             // Update URL hash without triggering scroll
             if (history.replaceState) {
                 history.replaceState(null, null, '#tab-' + tabId);
@@ -292,7 +378,8 @@
         function filterOrders() {
             var statusValue = $statusFilter.val();
             var searchValue = $searchInput.val().toLowerCase().trim();
-            var $orders = $ordersList.find('.polar-order-item');
+            var $activeContent = $ordersList.find('.polar-tab-content.active');
+            var $orders = $activeContent.find('.polar-order-item');
             var visibleCount = 0;
 
             $orders.each(function () {
@@ -329,11 +416,11 @@
             });
 
             // Show empty state if no orders visible
-            var $emptyState = $ordersList.find('.polar-empty-state');
+            var $emptyState = $activeContent.find('.polar-filter-empty-state');
             if (visibleCount === 0 && $orders.length > 0) {
                 if ($emptyState.length === 0) {
-                    $ordersList.append(
-                        '<div class="polar-empty-state">' +
+                    $activeContent.append(
+                        '<div class="polar-empty-state polar-filter-empty-state">' +
                         '<div class="empty-state-icon">' +
                         '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
                         '<path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
@@ -344,9 +431,9 @@
                         '</div>'
                     );
                 }
-                $emptyState.fadeIn(200);
+                $activeContent.find('.polar-filter-empty-state').fadeIn(200);
             } else {
-                $emptyState.fadeOut(200);
+                $activeContent.find('.polar-filter-empty-state').fadeOut(200);
             }
         }
 

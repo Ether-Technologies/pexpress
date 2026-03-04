@@ -620,20 +620,14 @@ class PExpress
         // Mark as assigned
         PExpress_Core::update_order_meta($order_id, '_polar_needs_assignment', 'no');
 
-        // Update agency role status
+        // Update agency role status and history
         PExpress_Core::update_role_status($order_id, 'agency', 'assigned');
         PExpress_Core::add_role_status_history($order_id, 'agency', 'assigned', $assignment_note);
 
-        // Initialize other role statuses to pending if not set
-        if (!PExpress_Core::get_role_status($order_id, 'delivery')) {
-            PExpress_Core::update_role_status($order_id, 'delivery', 'pending');
-        }
-        if (!PExpress_Core::get_role_status($order_id, 'fridge')) {
-            PExpress_Core::update_role_status($order_id, 'fridge', 'pending');
-        }
-        if (!PExpress_Core::get_role_status($order_id, 'distributor')) {
-            PExpress_Core::update_role_status($order_id, 'distributor', 'pending');
-        }
+        // Always persist per-role status for delivery, fridge, distributor so tracking shows correctly
+        PExpress_Core::update_role_status($order_id, 'delivery', 'pending');
+        PExpress_Core::update_role_status($order_id, 'fridge', 'pending');
+        PExpress_Core::update_role_status($order_id, 'distributor', 'pending');
 
         // Update order status
         $order = wc_get_order($order_id);
@@ -643,6 +637,7 @@ class PExpress
 
         // Automatically proceed the order after assignment
         PExpress_Core::update_role_status($order_id, 'agency', 'proceeded');
+        PExpress_Core::add_role_status_history($order_id, 'agency', 'proceeded', __('Order proceeded after assignment.', 'pexpress'));
         PExpress_Core::update_order_meta($order_id, '_polar_order_proceeded', current_time('mysql'));
         PExpress_Core::update_order_meta($order_id, '_polar_order_proceeded_by', $current_user->ID);
 
@@ -1202,15 +1197,18 @@ class PExpress
             wp_send_json_error(array('message' => __('Order not found.', 'pexpress')));
         }
 
-        // Check if user owns this order (unless admin)
+        // Check if user can view this order's tracking (customer, or staff with access)
         if (!is_user_logged_in()) {
             wp_send_json_error(array('message' => __('Please log in to view order tracking.', 'pexpress')));
         }
 
         $current_user = wp_get_current_user();
-        if (!current_user_can('manage_woocommerce')) {
+        $can_view = current_user_can('manage_woocommerce')
+            || in_array('polar_hr', (array) $current_user->roles, true)
+            || in_array('polar_support', (array) $current_user->roles, true);
+        if (!$can_view) {
             $customer_id = $order->get_customer_id();
-            if ($customer_id != $current_user->ID) {
+            if ((int) $customer_id !== (int) $current_user->ID) {
                 wp_send_json_error(array('message' => __('Access denied.', 'pexpress')));
             }
         }
@@ -1221,21 +1219,27 @@ class PExpress
         $fridge_status = PExpress_Core::get_role_status($order_id, 'fridge');
         $distributor_status = PExpress_Core::get_role_status($order_id, 'distributor');
 
-        // Get assigned users
+        // Get assigned users and resolve names safely (get_userdata can return false if user deleted)
         $delivery_user_id = PExpress_Core::get_delivery_user_id($order_id);
         $fridge_user_id = PExpress_Core::get_fridge_user_id($order_id);
         $distributor_user_id = PExpress_Core::get_distributor_user_id($order_id);
 
-        // Get user names
-        $delivery_user_name = $delivery_user_id ? get_userdata($delivery_user_id)->display_name : '';
-        $fridge_user_name = $fridge_user_id ? get_userdata($fridge_user_id)->display_name : '';
-        $distributor_user_name = $distributor_user_id ? get_userdata($distributor_user_id)->display_name : '';
+        $delivery_user = $delivery_user_id ? get_userdata($delivery_user_id) : null;
+        $fridge_user = $fridge_user_id ? get_userdata($fridge_user_id) : null;
+        $distributor_user = $distributor_user_id ? get_userdata($distributor_user_id) : null;
 
-        // Status labels
+        $delivery_user_name = $delivery_user ? $delivery_user->display_name : '';
+        $fridge_user_name = $fridge_user ? $fridge_user->display_name : '';
+        $distributor_user_name = $distributor_user ? $distributor_user->display_name : '';
+
+        // Status labels (match Core + all stakeholder statuses)
         $status_labels = array(
             'agency' => array(
                 'pending' => __('Pending', 'pexpress'),
                 'assigned' => __('Assigned', 'pexpress'),
+                'proceeded' => __('Proceeded', 'pexpress'),
+                'confirmed' => __('Confirmed', 'pexpress'),
+                'completed' => __('Completed', 'pexpress'),
             ),
             'delivery' => array(
                 'pending' => __('Pending', 'pexpress'),
@@ -1267,14 +1271,15 @@ class PExpress
             return ucfirst(str_replace('_', ' ', $status));
         };
 
-        // Helper function to get status class
+        // Helper function to get status class (completed / in-progress / pending)
         $get_status_class = function ($status) {
-            $completed_statuses = array('customer_served', 'fridge_returned', 'handoff_complete', 'service_complete');
-            $in_progress_statuses = array('meet_point_arrived', 'delivery_location_arrived', 'service_in_progress', 'fridge_drop', 'fridge_collected', 'distributor_prep', 'out_for_delivery', 'assigned');
+            $completed_statuses = array('customer_served', 'fridge_returned', 'handoff_complete', 'service_complete', 'proceeded', 'completed');
+            $in_progress_statuses = array('meet_point_arrived', 'delivery_location_arrived', 'service_in_progress', 'fridge_drop', 'fridge_collected', 'distributor_prep', 'out_for_delivery', 'assigned', 'confirmed');
 
             if (in_array($status, $completed_statuses, true)) {
                 return 'completed';
-            } elseif (in_array($status, $in_progress_statuses, true)) {
+            }
+            if (in_array($status, $in_progress_statuses, true)) {
                 return 'in-progress';
             }
             return 'pending';

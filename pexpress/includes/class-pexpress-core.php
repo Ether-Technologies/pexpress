@@ -250,7 +250,7 @@ class PExpress_Core
     public static function get_role_status_history($order_id, $role_key)
     {
         $meta_key = sprintf('_polar_status_history_%s', sanitize_key($role_key));
-        $history = self::get_order_meta($order_id, $meta_key, false);
+        $history = self::get_order_meta($order_id, $meta_key, true);
         if (!is_array($history)) {
             $history = array();
         }
@@ -350,11 +350,11 @@ class PExpress_Core
 
             $responsible_user_id = 0;
             if ($config['user_id_key'] === 'delivery') {
-                $responsible_user_id = self::get_delivery_user_id($order_id);
+                $responsible_user_id = absint(self::get_delivery_user_id($order_id));
             } elseif ($config['user_id_key'] === 'fridge') {
-                $responsible_user_id = self::get_fridge_user_id($order_id);
+                $responsible_user_id = absint(self::get_fridge_user_id($order_id));
             } elseif ($config['user_id_key'] === 'distributor') {
-                $responsible_user_id = self::get_distributor_user_id($order_id);
+                $responsible_user_id = absint(self::get_distributor_user_id($order_id));
             }
 
             $responsible_name = '';
@@ -362,18 +362,29 @@ class PExpress_Core
             if ($responsible_user_id) {
                 $user = get_userdata($responsible_user_id);
                 $responsible_name = $user ? $user->display_name : '';
-                $contact_phone = (string) get_user_meta($responsible_user_id, 'billing_phone', true);
-                if ($contact_phone === '' && function_exists('get_user_meta')) {
-                    $contact_phone = (string) get_user_meta($responsible_user_id, 'phone', true);
+                if ($responsible_name === '' && $user) {
+                    $responsible_name = $user->user_login;
+                }
+                if ($responsible_name === '') {
+                    $responsible_name = sprintf(__('User #%d', 'pexpress'), $responsible_user_id);
+                }
+                $phone_keys = array('billing_phone', 'phone', 'mobile', 'user_phone', 'telephone');
+                foreach ($phone_keys as $meta_key) {
+                    $contact_phone = (string) get_user_meta($responsible_user_id, $meta_key, true);
+                    if ($contact_phone !== '') {
+                        break;
+                    }
                 }
             }
 
             $history = self::get_role_status_history($order_id, $role_key);
             $last_update_timestamp = '';
+            $last_update_formatted = '';
             $last_update_note = '';
             if (!empty($history) && is_array($history)) {
                 $last = end($history);
                 $last_update_timestamp = isset($last['timestamp']) ? $last['timestamp'] : '';
+                $last_update_formatted = $last_update_timestamp ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_update_timestamp) : '';
                 $last_update_note = isset($last['note']) ? $last['note'] : '';
             }
 
@@ -386,6 +397,7 @@ class PExpress_Core
                 'responsible_name' => $responsible_name,
                 'contact_phone' => $contact_phone,
                 'last_update_timestamp' => $last_update_timestamp,
+                'last_update_formatted' => $last_update_formatted,
                 'last_update_note' => $last_update_note,
             );
         }
@@ -658,6 +670,63 @@ class PExpress_Core
         }
 
         return $orders;
+    }
+
+    /**
+     * Get all orders that have at least one role assignment (delivery, fridge, or distributor).
+     * Used by Agency dashboard so "In Progress" shows the same orders that appear on role dashboards.
+     *
+     * @param int $limit Optional. Max orders to return. Default 200.
+     * @return array Array of WC_Order objects.
+     */
+    public static function get_orders_with_any_assignment($limit = 200)
+    {
+        // Query orders that have any of the three assignment keys set (EXISTS avoids numeric/string issues in HPOS).
+        $args = array(
+            'status'     => 'any',
+            'limit'     => $limit * 2,
+            'orderby'   => 'date',
+            'order'     => 'DESC',
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key'     => '_polar_delivery_user_id',
+                    'compare' => 'EXISTS',
+                ),
+                array(
+                    'key'     => '_polar_fridge_user_id',
+                    'compare' => 'EXISTS',
+                ),
+                array(
+                    'key'     => '_polar_distributor_user_id',
+                    'compare' => 'EXISTS',
+                ),
+            ),
+        );
+
+        $orders = wc_get_orders($args);
+        if (!is_array($orders)) {
+            return array();
+        }
+
+        // Keep only orders where at least one assignment is non-zero (key can exist with empty value).
+        $filtered = array();
+        foreach ($orders as $order) {
+            if (!$order || !is_a($order, 'WC_Order')) {
+                continue;
+            }
+            $oid = $order->get_id();
+            $d = (int) self::get_order_meta($oid, '_polar_delivery_user_id');
+            $f = (int) self::get_order_meta($oid, '_polar_fridge_user_id');
+            $x = (int) self::get_order_meta($oid, '_polar_distributor_user_id');
+            if ($d > 0 || $f > 0 || $x > 0) {
+                $filtered[] = $order;
+                if (count($filtered) >= $limit) {
+                    break;
+                }
+            }
+        }
+        return $filtered;
     }
 
     /**

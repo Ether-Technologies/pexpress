@@ -41,44 +41,72 @@ class PExpress_Admin_Dashboards
             ),
         ));
 
-        // Get orders already assigned but not yet completed (for tabbed view).
-        // Use exact status slugs from WooCommerce order status dropdown; exclude terminal (complete/cancelled/refunded/failed/draft).
-        $in_progress_statuses = array(
-            'wc-pending',
-            'wc-processing',
-            'wc-on-hold',
-            'wc-polar-assigned',
-            'wc-polar-distributor-prep',
-            'wc-polar-out',
-            'wc-polar-distributor-complete',
-            'wc-polar-meet-point',
-            'wc-polar-delivery-location',
-            'wc-polar-service-progress',
-            'wc-polar-service-complete',
-            'wc-polar-fridge-drop',
-            'wc-polar-fridge-back',
-        );
-        $assigned_in_progress_orders = wc_get_orders(array(
-            'status' => $in_progress_statuses,
-            'limit' => 100,
-            'orderby' => 'date',
-            'order' => 'DESC',
-        ));
-        $terminal_statuses = array('wc-completed', 'wc-cancelled', 'wc-refunded', 'wc-failed', 'wc-checkout-draft', 'wc-polar-complete', 'wc-polar-delivered', 'wc-polar-fridge-returned');
-        $assigned_in_progress_orders = array_filter($assigned_in_progress_orders, function ($order) use ($terminal_statuses) {
+        // Get all HR (formerly delivery), fridge, and distributor users (needed for fallback and template)
+        $hr_users = get_users(array('role' => 'polar_delivery'));
+        $fridge_users = get_users(array('role' => 'polar_fridge'));
+        $distributor_users = get_users(array('role' => 'polar_distributor'));
+
+        // Get orders already assigned but not yet completed (In Progress tab).
+        // Use orders that have at least one role assignment (same source as distributor/delivery/fridge dashboards)
+        // so every order visible on those dashboards also appears here.
+        $orders_with_assignment = PExpress_Core::get_orders_with_any_assignment(300);
+        if (empty($orders_with_assignment)) {
+            // Fallback: merge assigned orders from every role user (same as each role dashboard uses).
+            $seen_ids = array();
+            foreach ($hr_users as $u) {
+                foreach (PExpress_Core::get_assigned_orders($u->ID, 'delivery') as $o) {
+                    if ($o && is_a($o, 'WC_Order') && !isset($seen_ids[$o->get_id()])) {
+                        $seen_ids[$o->get_id()] = true;
+                        $orders_with_assignment[] = $o;
+                    }
+                }
+            }
+            foreach ($fridge_users as $u) {
+                foreach (PExpress_Core::get_assigned_orders($u->ID, 'fridge') as $o) {
+                    if ($o && is_a($o, 'WC_Order') && !isset($seen_ids[$o->get_id()])) {
+                        $seen_ids[$o->get_id()] = true;
+                        $orders_with_assignment[] = $o;
+                    }
+                }
+            }
+            foreach ($distributor_users as $u) {
+                foreach (PExpress_Core::get_assigned_orders($u->ID, 'distributor') as $o) {
+                    if ($o && is_a($o, 'WC_Order') && !isset($seen_ids[$o->get_id()])) {
+                        $seen_ids[$o->get_id()] = true;
+                        $orders_with_assignment[] = $o;
+                    }
+                }
+            }
+            usort($orders_with_assignment, function ($a, $b) {
+                $tA = $a->get_date_created() ? $a->get_date_created()->getTimestamp() : 0;
+                $tB = $b->get_date_created() ? $b->get_date_created()->getTimestamp() : 0;
+                return $tB - $tA;
+            });
+            $orders_with_assignment = array_slice($orders_with_assignment, 0, 300);
+        }
+
+        $terminal_statuses = array('completed', 'cancelled', 'refunded', 'failed', 'checkout-draft', 'polar-complete', 'polar-delivered', 'polar-fridge-returned');
+        $terminal_statuses_wc = array_map(function ($s) {
+            return (strpos($s, 'wc-') === 0) ? $s : 'wc-' . $s;
+        }, $terminal_statuses);
+
+        $assigned_in_progress_orders = array();
+        foreach ($orders_with_assignment as $order) {
             if (!$order || !is_a($order, 'WC_Order')) {
-                return false;
+                continue;
             }
             $status = $order->get_status();
             $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
-            if (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses, true)) {
-                return false;
+            if (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses_wc, true)) {
+                continue;
             }
-            // Include order if it is not still "pending assignment" (show all non-pending in In Progress, with or without assignees)
             $needs = PExpress_Core::get_order_meta($order->get_id(), '_polar_needs_assignment');
-            return $needs !== 'yes';
-        });
-        $assigned_in_progress_orders = array_values($assigned_in_progress_orders);
+            if ($needs === 'yes') {
+                continue;
+            }
+            $assigned_in_progress_orders[] = $order;
+        }
+        $assigned_in_progress_orders = array_slice($assigned_in_progress_orders, 0, 100);
 
         // Get completed orders (exclude cancelled)
         $completed_orders = wc_get_orders(array(
@@ -87,11 +115,6 @@ class PExpress_Admin_Dashboards
             'orderby' => 'date',
             'order' => 'DESC',
         ));
-
-        // Get all HR (formerly delivery), fridge, and distributor users
-        $hr_users = get_users(array('role' => 'polar_delivery'));
-        $fridge_users = get_users(array('role' => 'polar_fridge'));
-        $distributor_users = get_users(array('role' => 'polar_distributor'));
 
         include PEXPRESS_PLUGIN_DIR . 'templates/hr-dashboard.php';
     }
@@ -254,19 +277,46 @@ class PExpress_Admin_Dashboards
             wp_die(__('You do not have permission to access this page.', 'pexpress'));
         }
 
-        // Get recent orders
+        // Fetch all recent orders (same as before)
         $recent_orders = wc_get_orders(array(
             'status' => 'any',
-            'limit' => 50,
+            'limit' => 100,
             'orderby' => 'date',
             'order' => 'DESC',
         ));
 
-        // Ensure $recent_orders is always an array
         if (!is_array($recent_orders)) {
             $recent_orders = array();
         }
 
+        // Split into tabbed groups like Agency Dashboard
+        $pending_orders = array();
+        $in_progress_orders = array();
+        $completed_orders = array();
+        $terminal_statuses = array('completed', 'cancelled', 'refunded', 'failed', 'checkout-draft', 'polar-complete', 'polar-delivered', 'polar-fridge-returned');
+        $terminal_statuses_wc = array_map(function ($s) {
+            return (strpos($s, 'wc-') === 0) ? $s : 'wc-' . $s;
+        }, $terminal_statuses);
+
+        foreach ($recent_orders as $order) {
+            if (!$order || !is_a($order, 'WC_Order')) {
+                continue;
+            }
+            $order_id = $order->get_id();
+            $status = $order->get_status();
+            $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
+            $needs_assignment = PExpress_Core::get_order_meta($order_id, '_polar_needs_assignment');
+
+            if ($needs_assignment === 'yes') {
+                $pending_orders[] = $order;
+            } elseif (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses_wc, true)) {
+                $completed_orders[] = $order;
+            } else {
+                $in_progress_orders[] = $order;
+            }
+        }
+
+        $recent_orders = $recent_orders; // keep for backward compatibility / "All" if needed
         include PEXPRESS_PLUGIN_DIR . 'templates/support-dashboard.php';
     }
 }

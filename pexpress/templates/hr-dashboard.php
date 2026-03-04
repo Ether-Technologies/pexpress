@@ -97,6 +97,40 @@ $distributor_count = count($distributor_users);
             <button class="polar-tab" data-tab="completed"><?php esc_html_e('Completed', 'pexpress'); ?> (<?php echo esc_html($completed_count); ?>)</button>
         </div>
 
+        <div class="polar-filters-wrapper">
+            <div class="polar-filters">
+                <div class="polar-filter-group">
+                    <label class="polar-filter-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 4H21M7 8H17M10 12H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        <?php esc_html_e('Filter', 'pexpress'); ?>
+                    </label>
+                    <select id="polar-agency-status-filter" class="polar-select">
+                        <option value=""><?php esc_html_e('All Statuses', 'pexpress'); ?></option>
+                        <?php
+                        $agency_statuses = wc_get_order_statuses();
+                        if (is_array($agency_statuses)) {
+                            foreach ($agency_statuses as $status_key => $status_label) {
+                                if (empty($status_key) || empty($status_label)) continue;
+                                echo '<option value="' . esc_attr($status_key) . '">' . esc_html($status_label) . '</option>';
+                            }
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div class="polar-filter-group polar-search-group">
+                    <label class="polar-filter-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <?php esc_html_e('Search', 'pexpress'); ?>
+                    </label>
+                    <input type="text" id="polar-agency-search" class="polar-input" placeholder="<?php esc_attr_e('Search by order ID, customer name, or phone...', 'pexpress'); ?>">
+                </div>
+            </div>
+        </div>
+
         <div class="polar-tab-content active" id="tab-pending">
             <?php if (!empty($pending_orders)) : ?>
                 <div class="polar-orders-list" id="polar-orders-list">
@@ -143,7 +177,7 @@ $distributor_count = count($distributor_users);
                         $fridge_instructions = PExpress_Core::get_role_instructions($order_id, 'fridge');
                         $distributor_instructions = PExpress_Core::get_role_instructions($order_id, 'distributor');
                     ?>
-                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>">
+                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>" data-status="<?php echo esc_attr($order->get_status()); ?>">
                             <div class="order-header">
                                 <div class="order-header-left">
                                     <h4 class="order-title">
@@ -173,7 +207,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Customer', 'pexpress'); ?></span>
-                                            <span class="detail-value"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
+                                            <span class="detail-value customer-name"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
                                         </div>
                                     </div>
                                     <div class="order-detail-item">
@@ -184,7 +218,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Phone', 'pexpress'); ?></span>
-                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link">
+                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link phone-number">
                                                 <?php echo esc_html($order->get_billing_phone()); ?>
                                             </a>
                                         </div>
@@ -401,9 +435,8 @@ $distributor_count = count($distributor_users);
                         $delivery_id = PExpress_Core::get_delivery_user_id($order_id);
                         $fridge_id = PExpress_Core::get_fridge_user_id($order_id);
                         $distributor_id = PExpress_Core::get_distributor_user_id($order_id);
-                        $stage_wise = PExpress_Core::get_stage_wise_tracking($order_id);
                     ?>
-                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>">
+                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>" data-status="<?php echo esc_attr($order->get_status()); ?>">
                             <div class="order-header">
                                 <div class="order-header-left">
                                     <h4 class="order-title">
@@ -433,7 +466,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Customer', 'pexpress'); ?></span>
-                                            <span class="detail-value"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
+                                            <span class="detail-value customer-name"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
                                         </div>
                                     </div>
                                     <div class="order-detail-item">
@@ -444,7 +477,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Phone', 'pexpress'); ?></span>
-                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link"><?php echo esc_html($order->get_billing_phone()); ?></a>
+                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link phone-number"><?php echo esc_html($order->get_billing_phone()); ?></a>
                                         </div>
                                     </div>
                                     <div class="order-detail-item">
@@ -493,54 +526,12 @@ $distributor_count = count($distributor_users);
                                         <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
-                                <?php if (!empty($stage_wise)) : ?>
-                                    <div class="order-detail-row order-detail-note">
-                                        <div class="order-detail-item order-detail-full">
-                                            <span class="detail-label"><?php esc_html_e('Progress by stage', 'pexpress'); ?></span>
-                                            <table class="polar-table polar-table-striped polar-stage-wise-table" style="width:100%; margin-top:6px;">
-                                                <thead>
-                                                    <tr>
-                                                        <th><?php esc_html_e('Stage', 'pexpress'); ?></th>
-                                                        <th><?php esc_html_e('Status', 'pexpress'); ?></th>
-                                                        <th><?php esc_html_e('Responsible', 'pexpress'); ?></th>
-                                                        <th><?php esc_html_e('Contact', 'pexpress'); ?></th>
-                                                        <th><?php esc_html_e('Last update', 'pexpress'); ?></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php foreach ($stage_wise as $row) : ?>
-                                                        <tr>
-                                                            <td><strong><?php echo esc_html($row['stage_label']); ?></strong></td>
-                                                            <td><span class="status-chip status-<?php echo esc_attr($row['current_status'] === 'pending' ? 'pending' : (in_array($row['current_status'], array('customer_served', 'fridge_returned', 'handoff_complete', 'assigned', 'proceeded'), true) ? 'completed' : 'in-progress')); ?>"><?php echo esc_html($row['status_label']); ?></span></td>
-                                                            <td><?php echo esc_html($row['responsible_name'] ? $row['responsible_name'] : '—'); ?></td>
-                                                            <td><?php
-                                                                if (!empty($row['contact_phone'])) {
-                                                                    echo '<a href="tel:' . esc_attr(preg_replace('/[^0-9+]/', '', $row['contact_phone'])) . '" class="detail-link">' . esc_html($row['contact_phone']) . '</a>';
-                                                                } else {
-                                                                    echo '—';
-                                                                }
-                                                            ?></td>
-                                                            <td><?php
-                                                                if (!empty($row['last_update_timestamp'])) {
-                                                                    echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $row['last_update_timestamp']));
-                                                                    if (!empty($row['last_update_note'])) {
-                                                                        echo ' <span class="polar-update-note">' . esc_html($row['last_update_note']) . '</span>';
-                                                                    }
-                                                                } else {
-                                                                    echo '—';
-                                                                }
-                                                            ?></td>
-                                                        </tr>
-                                                    <?php endforeach; ?>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
                             </div>
                             <div class="order-actions" style="margin-top: 10px;">
                                 <a href="<?php echo esc_url(admin_url('post.php?post=' . $order_id . '&action=edit')); ?>" class="polar-btn polar-btn-secondary" target="_blank"><?php esc_html_e('Edit Order', 'pexpress'); ?></a>
-                                <button type="button" class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('View Tracking', 'pexpress'); ?></button>
+                                <button type="button"
+                                    style="background-color: var(--polar-primary); color: #fff; border-radius: var(--polar-radius-md);"
+                                    class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('View Tracking', 'pexpress'); ?></button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -575,7 +566,7 @@ $distributor_count = count($distributor_users);
                         $fridge_id = PExpress_Core::get_fridge_user_id($order_id);
                         $distributor_id = PExpress_Core::get_distributor_user_id($order_id);
                     ?>
-                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>">
+                        <div class="polar-order-item" data-order-id="<?php echo esc_attr($order_id); ?>" data-status="<?php echo esc_attr($order->get_status()); ?>">
                             <div class="order-header">
                                 <div class="order-header-left">
                                     <h4 class="order-title">
@@ -605,7 +596,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Customer', 'pexpress'); ?></span>
-                                            <span class="detail-value"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
+                                            <span class="detail-value customer-name"><?php echo esc_html(PExpress_Core::get_billing_name($order)); ?></span>
                                         </div>
                                     </div>
                                     <div class="order-detail-item">
@@ -616,7 +607,7 @@ $distributor_count = count($distributor_users);
                                         </span>
                                         <div class="detail-content">
                                             <span class="detail-label"><?php esc_html_e('Phone', 'pexpress'); ?></span>
-                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link"><?php echo esc_html($order->get_billing_phone()); ?></a>
+                                            <a href="tel:<?php echo esc_attr($order->get_billing_phone()); ?>" class="detail-value detail-link phone-number"><?php echo esc_html($order->get_billing_phone()); ?></a>
                                         </div>
                                     </div>
                                     <div class="order-detail-item">
@@ -690,7 +681,7 @@ $distributor_count = count($distributor_users);
                             </div>
                             <div class="order-actions" style="margin-top: 10px;">
                                 <a href="<?php echo esc_url(admin_url('post.php?post=' . $order_id . '&action=edit')); ?>" class="polar-btn polar-btn-secondary" target="_blank"><?php esc_html_e('View Order', 'pexpress'); ?></a>
-                                <button type="button" class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('View Tracking', 'pexpress'); ?></button>
+                                <button type="button" style="background-color: var(--polar-primary); color: #fff; border-radius: var(--polar-radius-md);" class="polar-btn polar-btn-secondary polar-view-tracking-btn" data-order-id="<?php echo esc_attr($order_id); ?>"><?php esc_html_e('View Tracking', 'pexpress'); ?></button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -715,7 +706,7 @@ $distributor_count = count($distributor_users);
     <div class="polar-modal-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5);"></div>
     <div class="polar-modal-content" style="position: relative; background: #fff; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 80vh; overflow: auto;">
         <button type="button" class="polar-modal-close" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" aria-label="<?php esc_attr_e('Close', 'pexpress'); ?>">&times;</button>
-        <h3><?php esc_html_e('Order tracking', 'pexpress'); ?> <span id="polar-tracking-order-id"></span></h3>
+        <h3 style="text-align: center;"><?php esc_html_e('Order tracking', 'pexpress'); ?> <span id="polar-tracking-order-id"></span></h3>
         <div id="polar-tracking-modal-body"></div>
     </div>
 </div>
@@ -830,6 +821,13 @@ $distributor_count = count($distributor_users);
             $trackingModalBody.html('<p class="polar-loading"><?php echo esc_js(__('Loading tracking...', 'pexpress')); ?></p>');
             $trackingModal.fadeIn(300);
 
+            function esc(s) {
+                if (s == null || s === undefined) return '';
+                var div = document.createElement('div');
+                div.textContent = String(s);
+                return div.innerHTML;
+            }
+
             $.post(polarAjaxUrl, {
                 action: 'polar_get_order_tracking',
                 nonce: polarTrackingNonce,
@@ -841,27 +839,27 @@ $distributor_count = count($distributor_users);
                     if (data.stage_wise && data.stage_wise.length > 0) {
                         html = '<div class="polar-tracking-modal-statuses polar-stage-wise">';
                         data.stage_wise.forEach(function(row) {
-                            var statusClass = (row.current_status === 'pending') ? 'pending' : ((row.current_status === 'customer_served' || row.current_status === 'fridge_returned' || row.current_status === 'handoff_complete' || row.current_status === 'assigned' || row.current_status === 'proceeded') ? 'completed' : 'in-progress');
+                            var statusClass = (row.current_status === 'pending') ? 'pending' : ((row.current_status === 'customer_served' || row.current_status === 'fridge_returned' || row.current_status === 'handoff_complete' || row.current_status === 'assigned' || row.current_status === 'proceeded' || row.current_status === 'completed') ? 'completed' : 'in-progress');
                             html += '<div class="polar-tracking-status-row polar-status-' + statusClass + '">';
                             html += '<div class="polar-tracking-stage-info">';
-                            html += '<span class="polar-tracking-stage">' + row.stage_label + '</span>';
-                            html += '<span class="polar-tracking-badge">' + row.status_label + '</span>';
+                            html += '<span class="polar-tracking-stage">' + esc(row.stage_label) + '</span>';
+                            html += '<span class="polar-tracking-badge">' + esc(row.status_label) + '</span>';
                             html += '</div>';
                             html += '<div class="polar-tracking-contact-info">';
                             if (row.responsible_name) {
-                                html += '<span class="polar-tracking-person">' + row.responsible_name + '</span>';
+                                html += '<span class="polar-tracking-person">' + esc(row.responsible_name) + '</span>';
                             }
                             if (row.contact_phone) {
-                                html += ' <a href="tel:' + row.contact_phone.replace(/[^0-9+]/g, '') + '" class="polar-tracking-phone">' + row.contact_phone + '</a>';
+                                html += ' <a href="tel:' + esc(row.contact_phone.replace(/[^0-9+]/g, '')) + '" class="polar-tracking-phone">' + esc(row.contact_phone) + '</a>';
                             }
-                            if (row.last_update_timestamp) {
-                                html += '<span class="polar-tracking-update">' + row.last_update_timestamp;
+                            if (row.last_update_formatted || row.last_update_timestamp) {
+                                html += '<span class="polar-tracking-update">' + esc(row.last_update_formatted || row.last_update_timestamp);
                                 if (row.last_update_note) {
-                                    html += ' — ' + row.last_update_note;
+                                    html += ' — ' + esc(row.last_update_note);
                                 }
                                 html += '</span>';
                             }
-                            if (!row.responsible_name && !row.contact_phone && !row.last_update_timestamp) {
+                            if (!row.responsible_name && !row.contact_phone && !row.last_update_timestamp && !row.last_update_formatted) {
                                 html += '<span class="polar-tracking-empty">—</span>';
                             }
                             html += '</div></div>';
@@ -879,10 +877,10 @@ $distributor_count = count($distributor_users);
                         ['hr', 'delivery', 'fridge', 'distributor'].forEach(function(key) {
                             if (s[key]) {
                                 var stageLabel = stageLabels[key] || key;
-                                var userName = s[key].user_name ? ' <small>(' + s[key].user_name + ')</small>' : '';
+                                var userName = s[key].user_name ? ' <small>(' + esc(s[key].user_name) + ')</small>' : '';
                                 html += '<div class="polar-tracking-status-row polar-status-' + (s[key].class || 'pending') + '">';
                                 html += '<span class="polar-tracking-stage">' + stageLabel + '</span>';
-                                html += '<span class="polar-tracking-badge">' + (s[key].label || s[key].status) + '</span>' + userName;
+                                html += '<span class="polar-tracking-badge">' + esc(s[key].label || s[key].status) + '</span>' + userName;
                                 html += '</div>';
                             }
                         });

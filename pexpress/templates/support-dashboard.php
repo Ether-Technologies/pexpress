@@ -40,17 +40,14 @@ if (!function_exists('pexpress_get_order_edit_url')) {
     }
 }
 
-// Calculate stats
+// Calculate stats from tabbed groups (set by controller)
+$pending_orders = isset($pending_orders) ? $pending_orders : array();
+$in_progress_orders = isset($in_progress_orders) ? $in_progress_orders : array();
+$completed_orders = isset($completed_orders) ? $completed_orders : array();
 $total_orders = count($recent_orders);
-$processing_count = count(array_filter($recent_orders, function ($o) {
-    return $o && is_a($o, 'WC_Order') && $o->get_status() === 'processing';
-}));
-$completed_count = count(array_filter($recent_orders, function ($o) {
-    return $o && is_a($o, 'WC_Order') && $o->get_status() === 'completed';
-}));
-$delivery_count = count(array_filter($recent_orders, function ($o) {
-    return $o && is_a($o, 'WC_Order') && in_array($o->get_status(), array('wc-polar-out', 'wc-polar-delivered'));
-}));
+$pending_count = count($pending_orders);
+$in_progress_count = count($in_progress_orders);
+$completed_count = count($completed_orders);
 ?>
 
 <div class="wrap polar-dashboard polar-support-dashboard">
@@ -83,8 +80,19 @@ $delivery_count = count(array_filter($recent_orders, function ($o) {
                 </svg>
             </div>
             <div class="stat-card-content">
-                <h3 class="stat-card-value"><?php echo esc_html($processing_count); ?></h3>
-                <p class="stat-card-label"><?php esc_html_e('Processing', 'pexpress'); ?></p>
+                <h3 class="stat-card-value"><?php echo esc_html($pending_count); ?></h3>
+                <p class="stat-card-label"><?php esc_html_e('Pending Assignment', 'pexpress'); ?></p>
+            </div>
+        </div>
+        <div class="polar-stat-card stat-card-info">
+            <div class="stat-card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <h3 class="stat-card-value"><?php echo esc_html($in_progress_count); ?></h3>
+                <p class="stat-card-label"><?php esc_html_e('In Progress', 'pexpress'); ?></p>
             </div>
         </div>
         <div class="polar-stat-card stat-card-success">
@@ -98,22 +106,17 @@ $delivery_count = count(array_filter($recent_orders, function ($o) {
                 <p class="stat-card-label"><?php esc_html_e('Completed', 'pexpress'); ?></p>
             </div>
         </div>
-        <div class="polar-stat-card stat-card-info">
-            <div class="stat-card-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 7H16M8 12H16M8 17H16M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </div>
-            <div class="stat-card-content">
-                <h3 class="stat-card-value"><?php echo esc_html($delivery_count); ?></h3>
-                <p class="stat-card-label"><?php esc_html_e('In Delivery', 'pexpress'); ?></p>
-            </div>
-        </div>
     </div>
 
     <div class="polar-orders-section">
         <div class="polar-section-header">
-            <h2 class="polar-section-title"><?php esc_html_e('Recent Orders', 'pexpress'); ?></h2>
+            <h2 class="polar-section-title"><?php esc_html_e('Orders', 'pexpress'); ?></h2>
+        </div>
+
+        <div class="polar-tabs">
+            <button class="polar-tab active" data-tab="pending"><?php esc_html_e('Pending Assignment', 'pexpress'); ?> (<?php echo esc_html($pending_count); ?>)</button>
+            <button class="polar-tab" data-tab="in-progress"><?php esc_html_e('In Progress', 'pexpress'); ?> (<?php echo esc_html($in_progress_count); ?>)</button>
+            <button class="polar-tab" data-tab="completed"><?php esc_html_e('Completed', 'pexpress'); ?> (<?php echo esc_html($completed_count); ?>)</button>
         </div>
 
         <div class="polar-filters-wrapper">
@@ -156,9 +159,20 @@ $delivery_count = count(array_filter($recent_orders, function ($o) {
             </div>
         </div>
 
-        <div class="polar-orders-list" id="polar-support-orders">
-            <?php if (!empty($recent_orders)) : ?>
-                <?php foreach ($recent_orders as $order) :
+        <div id="polar-support-orders">
+            <?php
+            $support_tabs = array(
+                'pending'       => $pending_orders,
+                'in-progress'   => $in_progress_orders,
+                'completed'     => $completed_orders,
+            );
+            foreach ($support_tabs as $tab_key => $tab_orders) :
+                $is_first = ($tab_key === 'pending');
+            ?>
+            <div class="polar-tab-content<?php echo $is_first ? ' active' : ''; ?>" id="tab-<?php echo esc_attr($tab_key); ?>">
+                <div class="polar-orders-list">
+            <?php if (!empty($tab_orders)) : ?>
+                <?php foreach ($tab_orders as $order) :
                     // Skip invalid orders
                     if (!$order || !is_a($order, 'WC_Order')) {
                         continue;
@@ -452,6 +466,9 @@ $delivery_count = count(array_filter($recent_orders, function ($o) {
                     <p><?php esc_html_e('There are no orders to display at the moment.', 'pexpress'); ?></p>
                 </div>
             <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </div>
