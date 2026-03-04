@@ -34,7 +34,7 @@ body.polar-order-edit-page #wpbody-content {
   --polar-primary: #6366f1; /* Indigo 500 */
   --polar-primary-dark: #4f46e5; /* Indigo 600 */
   --polar-secondary: #ec4899; /* Pink 500 */
-  
+
   /* Colors - Functional */
   --polar-success: #10b981; /* Emerald 500 */
   --polar-warning: #f59e0b; /* Amber 500 */
@@ -47,20 +47,22 @@ body.polar-order-edit-page #wpbody-content {
   --polar-text-main: #111827; /* Gray 900 */
   --polar-text-muted: #6b7280; /* Gray 500 */
   --polar-border: #e5e7eb; /* Gray 200 */
-  
+
   /* Spacing */
   --polar-space-xs: 0.25rem;
   --polar-space-sm: 0.5rem;
   --polar-space-md: 1rem;
   --polar-space-lg: 1.5rem;
   --polar-space-xl: 2rem;
-  
+
   /* UI Elements */
   --polar-radius-md: 0.5rem;
   --polar-radius-lg: 0.75rem;
   --polar-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --polar-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --polar-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --polar-shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --polar-shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
   /* Transitions */
   --polar-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -76,7 +78,15 @@ body.polar-order-edit-page #wpbody-content {
   margin: var(--polar-space-lg) auto;
   padding: 0 var(--polar-space-md);
   color: var(--polar-text-main);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
 }
 
 /* === Header === */
@@ -227,7 +237,9 @@ body.polar-order-edit-page #wpbody-content {
   color: var(--polar-primary);
   text-decoration: none;
 }
-.detail-link:hover { text-decoration: underline; }
+.detail-link:hover {
+  text-decoration: underline;
+}
 
 /* === Custom Table === */
 .polar-order-items-table-wrapper {
@@ -240,11 +252,11 @@ body.polar-order-edit-page #wpbody-content {
   border-collapse: collapse;
   font-size: 0.95rem;
 }
-.polar-add-product-form{
+.polar-add-product-form {
   width: 100%;
   margin: 0 auto;
 }
-.polar-modal-td-product{
+.polar-modal-td-product {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -397,8 +409,14 @@ body.polar-order-edit-page #wpbody-content {
   border-radius: 4px;
   text-transform: uppercase;
 }
-.forward-status-badge.is-idle { background: #f3f4f6; color: var(--polar-text-muted); }
-.forward-status-badge.is-forwarded { background: #d1fae5; color: #065f46; }
+.forward-status-badge.is-idle {
+  background: #f3f4f6;
+  color: var(--polar-text-muted);
+}
+.forward-status-badge.is-forwarded {
+  background: #d1fae5;
+  color: #065f46;
+}
 
 .polar-textarea.forward-note {
   width: 100%;
@@ -431,18 +449,45 @@ body.polar-order-edit-page #wpbody-content {
   text-decoration: none;
 }
 
-.polar-btn-primary { background: var(--polar-primary); color: white; }
-.polar-btn-primary:hover { background: var(--polar-primary-dark); }
-.polar-btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+.polar-btn-primary {
+  background: var(--polar-primary);
+  color: white;
+}
+.polar-btn-primary:hover {
+  background: var(--polar-primary-dark);
+}
+.polar-btn-primary:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
 
-.polar-btn-secondary { background: white; border: 1px solid var(--polar-border); color: var(--polar-text-main); }
-.polar-btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+.polar-btn-secondary {
+  background: white;
+  border: 1px solid var(--polar-border);
+  color: var(--polar-text-main);
+}
+.polar-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
 
-.polar-btn-success { background: var(--polar-success); color: white; }
-.polar-btn-success:hover { background: #059669; }
+.polar-btn-success {
+  background: var(--polar-success);
+  color: white;
+}
+.polar-btn-success:hover {
+  background: #059669;
+}
 
-.polar-btn-danger { background: #d63638; color: white; border-color: #d63638; }
-.polar-btn-danger:hover { background: #b32d2e; color: white; }
+.polar-btn-danger {
+  background: #d63638;
+  color: white;
+  border-color: #d63638;
+}
+.polar-btn-danger:hover {
+  background: #b32d2e;
+  color: white;
+}
 
 /* Action Cards */
 .polar-order-actions-card .order-actions-body {
@@ -471,14 +516,19 @@ body.polar-order-edit-page #wpbody-content {
   padding: 16px 20px;
   border-bottom: 1px solid var(--polar-border);
 }
-.polar-log-entry:last-child { border-bottom: none; }
+.polar-log-entry:last-child {
+  border-bottom: none;
+}
 
 .polar-log-header {
   display: flex;
   justify-content: space-between;
   margin-bottom: 4px;
 }
-.polar-log-time { font-size: 0.75rem; color: var(--polar-text-muted); }
+.polar-log-time {
+  font-size: 0.75rem;
+  color: var(--polar-text-muted);
+}
 .polar-action-badge {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -486,7 +536,11 @@ body.polar-order-edit-page #wpbody-content {
   color: var(--polar-primary);
 }
 
-.polar-log-user { font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; }
+.polar-log-user {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
 
 .polar-log-details {
   background: #f9fafb;
@@ -511,8 +565,14 @@ body.polar-order-edit-page #wpbody-content {
 }
 
 /* Assignments Badges */
-.assignment-info { padding: var(--polar-space-lg); }
-.assignment-badges { display: flex; flex-direction: column; gap: 8px; }
+.assignment-info {
+  padding: var(--polar-space-lg);
+}
+.assignment-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .assignment-badge {
   display: flex;
   align-items: center;
@@ -522,9 +582,18 @@ body.polar-order-edit-page #wpbody-content {
   font-size: 0.85rem;
   font-weight: 500;
 }
-.badge-delivery { background: #eff6ff; color: #1e40af; }
-.badge-fridge { background: #ecfdf5; color: #065f46; }
-.badge-distributor { background: #fff7ed; color: #9a3412; }
+.badge-delivery {
+  background: #eff6ff;
+  color: #1e40af;
+}
+.badge-fridge {
+  background: #ecfdf5;
+  color: #065f46;
+}
+.badge-distributor {
+  background: #fff7ed;
+  color: #9a3412;
+}
 
 /* === Modals (Backbone) === */
 .polar-order-modal,
@@ -683,11 +752,17 @@ body.polar-order-edit-page #wpbody-content {
   border-color: var(--polar-border);
   border-radius: var(--polar-radius-md);
 }
-.polar-dashboard .select2-container--default .select2-selection--single .select2-selection__rendered {
+.polar-dashboard
+  .select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
   line-height: 42px;
   padding-left: 12px;
 }
-.polar-dashboard .select2-container--default .select2-selection--single .select2-selection__arrow {
+.polar-dashboard
+  .select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
   height: 40px;
 }
 
@@ -970,6 +1045,315 @@ body.polar-order-edit-page #wpbody-content {
   gap: 10px;
 }
 
+/* === Order Tracking Modal (revamped) === */
+.polar-tracking-modal.polar-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.polar-tracking-modal.polar-modal-open {
+  display: flex;
+}
+.polar-tracking-modal .polar-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+.polar-tracking-modal .polar-modal-content.polar-tracking-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  max-height: 88vh;
+  background: var(--polar-card-bg);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.polar-tracking-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--polar-bg);
+  border: none;
+  border-radius: 10px;
+  color: var(--polar-text-muted);
+  cursor: pointer;
+  transition: var(--polar-transition);
+  z-index: 2;
+}
+.polar-tracking-modal-close:hover {
+  background: var(--polar-border);
+  color: var(--polar-text-main);
+}
+.polar-tracking-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--polar-border);
+  flex-shrink: 0;
+}
+.polar-tracking-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.polar-tracking-modal-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--polar-primary) 0%,
+    var(--polar-secondary) 100%
+  );
+  color: #fff;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.polar-tracking-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--polar-text-main);
+  letter-spacing: -0.02em;
+}
+.polar-tracking-modal-order-id {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--polar-primary);
+  letter-spacing: -0.01em;
+}
+.polar-tracking-modal-body {
+  padding: 16px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.polar-tracking-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  color: var(--polar-text-muted);
+  font-size: 14px;
+}
+.polar-tracking-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--polar-border);
+  border-top-color: var(--polar-primary);
+  border-radius: 50%;
+  animation: polar-spin 0.8s linear infinite;
+}
+@keyframes polar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.polar-tracking-error {
+  text-align: center;
+  padding: 32px 24px;
+  color: var(--polar-danger);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Timeline */
+.polar-tracking-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.polar-tracking-timeline-item {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+}
+.polar-tracking-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  margin-right: 14px;
+}
+.polar-tracking-node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--polar-border);
+  color: var(--polar-text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+  transition: var(--polar-transition);
+}
+.polar-tracking-timeline-item.polar-status-completed .polar-tracking-node-icon {
+  background: var(--polar-success);
+  color: #fff;
+}
+.polar-tracking-timeline-item.polar-status-in-progress
+  .polar-tracking-node-icon {
+  background: linear-gradient(
+    135deg,
+    var(--polar-primary) 0%,
+    var(--polar-secondary) 100%
+  );
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+.polar-tracking-timeline-item[data-stage-icon="assign"]
+  .polar-tracking-node-icon::before {
+  content: "▸";
+  font-size: 14px;
+  font-weight: 700;
+}
+.polar-tracking-timeline-item[data-stage-icon="delivery"]
+  .polar-tracking-node-icon::before {
+  content: "🚚";
+  font-size: 14px;
+}
+.polar-tracking-timeline-item[data-stage-icon="fridge"]
+  .polar-tracking-node-icon::before {
+  content: "🧊";
+  font-size: 14px;
+}
+.polar-tracking-timeline-item[data-stage-icon="truck"]
+  .polar-tracking-node-icon::before {
+  content: "📦";
+  font-size: 14px;
+}
+.polar-tracking-timeline-item[data-stage-icon="dot"]
+  .polar-tracking-node-icon::before {
+  content: "•";
+  font-size: 18px;
+  line-height: 1;
+}
+.polar-tracking-timeline-item.polar-status-completed
+  .polar-tracking-node-icon::before {
+  content: "✓";
+  font-size: 14px;
+  font-weight: 700;
+}
+.polar-tracking-node-line {
+  width: 2px;
+  flex: 1;
+  min-height: 12px;
+  background: var(--polar-border);
+  margin-top: 4px;
+}
+.polar-tracking-timeline-item.polar-status-completed
+  + .polar-tracking-timeline-item
+  .polar-tracking-node-line,
+.polar-tracking-timeline-item.polar-status-completed .polar-tracking-node-line {
+  background: var(--polar-success);
+  opacity: 0.5;
+}
+
+.polar-tracking-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--polar-bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+  transition: var(--polar-transition);
+}
+.polar-tracking-timeline-item.polar-status-in-progress .polar-tracking-card {
+  border-color: rgba(99, 102, 241, 0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.06) 0%,
+    rgba(236, 72, 153, 0.04) 100%
+  );
+}
+.polar-tracking-timeline-item.polar-status-completed .polar-tracking-card {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.polar-tracking-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.polar-tracking-card-stage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--polar-text-main);
+}
+.polar-tracking-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.polar-tracking-pill.polar-pill-pending {
+  background: var(--polar-border);
+  color: var(--polar-text-muted);
+}
+.polar-tracking-pill.polar-pill-in-progress {
+  background: linear-gradient(
+    135deg,
+    var(--polar-primary) 0%,
+    var(--polar-secondary) 100%
+  );
+  color: #fff;
+}
+.polar-tracking-pill.polar-pill-completed {
+  background: var(--polar-success);
+  color: #fff;
+}
+.polar-tracking-card-meta {
+  font-size: 13px;
+  color: var(--polar-text-muted);
+  margin-bottom: 4px;
+}
+.polar-tracking-card-meta .polar-tracking-person {
+  font-weight: 500;
+  color: var(--polar-text-main);
+}
+.polar-tracking-card-meta .polar-tracking-phone {
+  color: var(--polar-primary);
+  text-decoration: none;
+  margin-left: 6px;
+}
+.polar-tracking-card-meta .polar-tracking-phone:hover {
+  text-decoration: underline;
+}
+.polar-tracking-card-note {
+  font-size: 12px;
+  color: var(--polar-text-muted);
+  line-height: 1.45;
+}
+.polar-tracking-card-note .polar-tracking-time {
+  font-weight: 500;
+  color: var(--polar-text-main);
+}
+
 .polar-tracking-status-row {
   display: flex;
   align-items: center;
@@ -1066,6 +1450,7 @@ body.polar-order-edit-page #wpbody-content {
     font-size: 12px;
   }
 
+  #polar-tracking-modal .polar-modal-content.polar-tracking-modal-content,
   #polar-tracking-modal .polar-modal-content {
     max-width: 100%;
     margin: 10px;
@@ -2109,7 +2494,9 @@ body.polar-order-edit-page #wpbody-content {
   background-color: #ffffff;
   border: 1px solid var(--polar-border);
   border-radius: var(--polar-radius-md);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   z-index: 100002 !important;
 }
@@ -2150,7 +2537,9 @@ body.polar-order-edit-page #wpbody-content {
   border-bottom: 1px solid #f3f4f6;
   transition: background-color 0.1s ease;
 }
-.select2-results__option:last-child { border-bottom: none; }
+.select2-results__option:last-child {
+  border-bottom: none;
+}
 
 .select2-results__option--highlighted[aria-selected] {
   background-color: #eef2ff !important;
@@ -2173,20 +2562,26 @@ body.polar-order-edit-page #wpbody-content {
   background-color: #ffffff;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__rendered {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
   line-height: normal;
   color: var(--polar-text-main);
   padding-left: 14px;
   padding-right: 30px;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__arrow {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
   height: 40px;
   width: 30px;
   right: 1px;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__clear {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__clear {
   color: #9ca3af;
   font-size: 18px;
   height: 100%;
@@ -2195,7 +2590,9 @@ body.polar-order-edit-page #wpbody-content {
   cursor: pointer;
   font-weight: bold;
 }
-.select2-container--default .select2-selection--single .select2-selection__clear:hover {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__clear:hover {
   color: var(--polar-danger);
 }
 
@@ -2208,7 +2605,9 @@ body.polar-order-edit-page #wpbody-content {
   padding: 4px;
 }
 
-.select2-container--default .select2-selection--multiple .select2-selection__choice {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice {
   background-color: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
@@ -2221,7 +2620,9 @@ body.polar-order-edit-page #wpbody-content {
   gap: 6px;
 }
 
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove {
   color: #9ca3af;
   cursor: pointer;
   font-size: 14px;
@@ -2232,7 +2633,9 @@ body.polar-order-edit-page #wpbody-content {
   display: inline-block;
   line-height: 1;
 }
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove:hover {
   color: var(--polar-danger);
 }
 
@@ -2258,45 +2661,45 @@ body.polar-order-edit-page #wpbody-content {
 
 /* Inline Add Product Section */
 .polar-add-product-inline-section {
-    margin-top: 20px;
-    padding: 24px;
-    background: #f8f9fa;
-    border: 1px solid #dcdcde;
-    border-radius: 8px;
+  margin-top: 20px;
+  padding: 24px;
+  background: #f8f9fa;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
 }
 
 .polar-add-product-inline-section h3 {
-    margin-top: 0;
-    font-size: 18px;
+  margin-top: 0;
+  font-size: 18px;
 }
 
 .polar-add-product-inline-section .polar-add-item-help {
-    color: #646970;
-    margin-bottom: 20px;
+  color: #646970;
+  margin-bottom: 20px;
 }
 
 .polar-add-product-table {
-    max-width: 100%;
-    table-layout: fixed;
+  max-width: 100%;
+  table-layout: fixed;
 }
 
 .polar-add-product-table .polar-modal-td-product {
-    max-width: 320px;
+  max-width: 320px;
 }
 
 .polar-product-dropdown {
-    max-width: 100%;
-    width: 280px;
-    box-sizing: border-box;
+  max-width: 100%;
+  width: 280px;
+  box-sizing: border-box;
 }
 
 .polar-inline-actions {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .polar-submit-items-btn {
-    margin-left: auto;
+  margin-left: auto;
 }

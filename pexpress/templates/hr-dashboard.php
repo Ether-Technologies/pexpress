@@ -702,12 +702,24 @@ $distributor_count = count($distributor_users);
 
 </div>
 
-<div id="polar-tracking-modal" class="polar-modal" style="display:none; position: fixed; inset: 0; z-index: 100000; align-items: center; justify-content: center;">
-    <div class="polar-modal-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5);"></div>
-    <div class="polar-modal-content" style="position: relative; background: #fff; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 80vh; overflow: auto;">
-        <button type="button" class="polar-modal-close" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" aria-label="<?php esc_attr_e('Close', 'pexpress'); ?>">&times;</button>
-        <h3 style="text-align: center;"><?php esc_html_e('Order tracking', 'pexpress'); ?> <span id="polar-tracking-order-id"></span></h3>
-        <div id="polar-tracking-modal-body"></div>
+<div id="polar-tracking-modal" class="polar-modal polar-tracking-modal" aria-hidden="true">
+    <div class="polar-modal-overlay"></div>
+    <div class="polar-modal-content polar-tracking-modal-content">
+        <button type="button" class="polar-modal-close polar-tracking-modal-close" aria-label="<?php esc_attr_e('Close', 'pexpress'); ?>">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <header class="polar-tracking-modal-header">
+            <div class="polar-tracking-modal-title-wrap">
+                <span class="polar-tracking-modal-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </span>
+                <div>
+                    <h2 class="polar-tracking-modal-title"><?php esc_html_e('Order tracking', 'pexpress'); ?></h2>
+                    <p class="polar-tracking-modal-order-id">#<span id="polar-tracking-order-id"></span></p>
+                </div>
+            </div>
+        </header>
+        <div id="polar-tracking-modal-body" class="polar-tracking-modal-body"></div>
     </div>
 </div>
 
@@ -817,15 +829,23 @@ $distributor_count = count($distributor_users);
         var polarAjaxUrl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
 
         function openTrackingModal(orderId) {
-            $trackingOrderIdSpan.text('#' + orderId);
-            $trackingModalBody.html('<p class="polar-loading"><?php echo esc_js(__('Loading tracking...', 'pexpress')); ?></p>');
-            $trackingModal.fadeIn(300);
+            $trackingOrderIdSpan.text(orderId);
+            $trackingModalBody.html('<div class="polar-tracking-loading"><div class="polar-tracking-loading-spinner"></div><p><?php echo esc_js(__('Loading tracking...', 'pexpress')); ?></p></div>');
+            $trackingModal.addClass('polar-modal-open').attr('aria-hidden', 'false');
 
             function esc(s) {
                 if (s == null || s === undefined) return '';
                 var div = document.createElement('div');
                 div.textContent = String(s);
                 return div.innerHTML;
+            }
+            function stageIcon(label) {
+                var l = (label || '').toLowerCase();
+                if (l.indexOf('distribution') !== -1 || l.indexOf('agency') !== -1) return 'assign';
+                if (l.indexOf('sr') !== -1 || l.indexOf('delivery') !== -1) return 'delivery';
+                if (l.indexOf('fridge') !== -1 || l.indexOf('fsd') !== -1) return 'fridge';
+                if (l.indexOf('product') !== -1 || l.indexOf('provider') !== -1 || l.indexOf('distributor') !== -1) return 'truck';
+                return 'dot';
             }
 
             $.post(polarAjaxUrl, {
@@ -837,70 +857,78 @@ $distributor_count = count($distributor_users);
                     var data = response.data;
                     var html = '';
                     if (data.stage_wise && data.stage_wise.length > 0) {
-                        html = '<div class="polar-tracking-modal-statuses polar-stage-wise">';
-                        data.stage_wise.forEach(function(row) {
+                        html = '<div class="polar-tracking-timeline">';
+                        data.stage_wise.forEach(function(row, idx) {
                             var statusClass = (row.current_status === 'pending') ? 'pending' : ((row.current_status === 'customer_served' || row.current_status === 'fridge_returned' || row.current_status === 'handoff_complete' || row.current_status === 'assigned' || row.current_status === 'proceeded' || row.current_status === 'completed') ? 'completed' : 'in-progress');
-                            html += '<div class="polar-tracking-status-row polar-status-' + statusClass + '">';
-                            html += '<div class="polar-tracking-stage-info">';
-                            html += '<span class="polar-tracking-stage">' + esc(row.stage_label) + '</span>';
-                            html += '<span class="polar-tracking-badge">' + esc(row.status_label) + '</span>';
+                            var icon = stageIcon(row.stage_label);
+                            html += '<div class="polar-tracking-timeline-item polar-status-' + statusClass + '" data-stage-icon="' + esc(icon) + '">';
+                            html += '<div class="polar-tracking-node">';
+                            html += '<span class="polar-tracking-node-icon"></span>';
+                            if (idx < data.stage_wise.length - 1) html += '<span class="polar-tracking-node-line"></span>';
                             html += '</div>';
-                            html += '<div class="polar-tracking-contact-info">';
-                            if (row.responsible_name) {
-                                html += '<span class="polar-tracking-person">' + esc(row.responsible_name) + '</span>';
+                            html += '<div class="polar-tracking-card">';
+                            html += '<div class="polar-tracking-card-header">';
+                            html += '<span class="polar-tracking-card-stage">' + esc(row.stage_label) + '</span>';
+                            html += '<span class="polar-tracking-pill polar-pill-' + statusClass + '">' + esc(row.status_label) + '</span>';
+                            html += '</div>';
+                            html += '<div class="polar-tracking-card-meta">';
+                            if (row.responsible_name || row.contact_phone) {
+                                if (row.responsible_name) html += '<span class="polar-tracking-person">' + esc(row.responsible_name) + '</span>';
+                                if (row.contact_phone) html += ' <a href="tel:' + esc(String(row.contact_phone).replace(/[^0-9+]/g, '')) + '" class="polar-tracking-phone">' + esc(row.contact_phone) + '</a>';
                             }
-                            if (row.contact_phone) {
-                                html += ' <a href="tel:' + esc(row.contact_phone.replace(/[^0-9+]/g, '')) + '" class="polar-tracking-phone">' + esc(row.contact_phone) + '</a>';
-                            }
-                            if (row.last_update_formatted || row.last_update_timestamp) {
-                                html += '<span class="polar-tracking-update">' + esc(row.last_update_formatted || row.last_update_timestamp);
-                                if (row.last_update_note) {
-                                    html += ' — ' + esc(row.last_update_note);
+                            html += '</div>';
+                            if (row.last_update_formatted || row.last_update_timestamp || row.last_update_note) {
+                                html += '<div class="polar-tracking-card-note">';
+                                if (row.last_update_formatted || row.last_update_timestamp) {
+                                    html += '<span class="polar-tracking-time">' + esc(row.last_update_formatted || row.last_update_timestamp) + '</span>';
+                                    if (row.last_update_note) html += ' — ';
                                 }
-                                html += '</span>';
-                            }
-                            if (!row.responsible_name && !row.contact_phone && !row.last_update_timestamp && !row.last_update_formatted) {
-                                html += '<span class="polar-tracking-empty">—</span>';
+                                if (row.last_update_note) html += '<span class="polar-tracking-note">' + esc(row.last_update_note) + '</span>';
+                                html += '</div>';
                             }
                             html += '</div></div>';
                         });
                         html += '</div>';
                     } else if (data.statuses) {
                         var s = data.statuses;
-                        var stageLabels = {
-                            hr: '<?php echo esc_js(__('Distribution', 'pexpress')); ?>',
-                            delivery: '<?php echo esc_js(__('SR', 'pexpress')); ?>',
-                            fridge: '<?php echo esc_js(__('Fridge Dept (FSD)', 'pexpress')); ?>',
-                            distributor: '<?php echo esc_js(__('Product Provider', 'pexpress')); ?>'
-                        };
-                        html = '<div class="polar-tracking-modal-statuses">';
-                        ['hr', 'delivery', 'fridge', 'distributor'].forEach(function(key) {
-                            if (s[key]) {
-                                var stageLabel = stageLabels[key] || key;
-                                var userName = s[key].user_name ? ' <small>(' + esc(s[key].user_name) + ')</small>' : '';
-                                html += '<div class="polar-tracking-status-row polar-status-' + (s[key].class || 'pending') + '">';
-                                html += '<span class="polar-tracking-stage">' + stageLabel + '</span>';
-                                html += '<span class="polar-tracking-badge">' + esc(s[key].label || s[key].status) + '</span>' + userName;
-                                html += '</div>';
-                            }
+                        var stageLabels = { hr: '<?php echo esc_js(__('Distribution', 'pexpress')); ?>', delivery: '<?php echo esc_js(__('SR', 'pexpress')); ?>', fridge: '<?php echo esc_js(__('Fridge Dept (FSD)', 'pexpress')); ?>', distributor: '<?php echo esc_js(__('Product Provider', 'pexpress')); ?>' };
+                        var order = ['hr', 'delivery', 'fridge', 'distributor'];
+                        var stageIcons = { hr: 'assign', delivery: 'delivery', fridge: 'fridge', distributor: 'truck' };
+                        html = '<div class="polar-tracking-timeline">';
+                        order.forEach(function(key, idx) {
+                            if (!s[key]) return;
+                            var row = s[key];
+                            var stageLabel = stageLabels[key] || key;
+                            var statusClass = row.class || 'pending';
+                            html += '<div class="polar-tracking-timeline-item polar-status-' + statusClass + '" data-stage-icon="' + (stageIcons[key] || 'dot') + '">';
+                            html += '<div class="polar-tracking-node"><span class="polar-tracking-node-icon"></span>';
+                            if (idx < order.length - 1) html += '<span class="polar-tracking-node-line"></span>';
+                            html += '</div>';
+                            html += '<div class="polar-tracking-card">';
+                            html += '<div class="polar-tracking-card-header">';
+                            html += '<span class="polar-tracking-card-stage">' + esc(stageLabel) + '</span>';
+                            html += '<span class="polar-tracking-pill polar-pill-' + statusClass + '">' + esc(row.label || row.status) + '</span>';
+                            html += '</div>';
+                            if (row.user_name) html += '<div class="polar-tracking-card-meta"><span class="polar-tracking-person">' + esc(row.user_name) + '</span></div>';
+                            html += '</div></div>';
                         });
                         html += '</div>';
                     }
                     if (html) {
                         $trackingModalBody.html(html);
                     } else {
-                        $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+                        $trackingModalBody.html('<p class="polar-tracking-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
                     }
                 } else {
-                    $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+                    $trackingModalBody.html('<p class="polar-tracking-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
                 }
             }).fail(function() {
-                $trackingModalBody.html('<p class="polar-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
+                $trackingModalBody.html('<p class="polar-tracking-error"><?php echo esc_js(__('Unable to load tracking.', 'pexpress')); ?></p>');
             });
         }
 
         function closeTrackingModal() {
-            $trackingModal.fadeOut(300);
+            $trackingModal.removeClass('polar-modal-open').attr('aria-hidden', 'true');
         }
 
         $(document).on('click', '.polar-view-tracking-btn', function() {

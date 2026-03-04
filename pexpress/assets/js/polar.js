@@ -14,8 +14,8 @@
         initAssignmentForms();
         initStatusUpdateForms();
         initSupportDashboardFilters();
-        initAgencyDashboardFilters();
         initTabs();
+        initAgencyDashboardFilters();
         initHistoryRowExpansion();
         initProceedOrder();
     });
@@ -234,38 +234,89 @@
     }
 
     /**
-     * Initialize Agency Dashboard filters and search
+     * Initialize Agency Dashboard filters and search (uses delegation so it works when content loads later)
      */
     function initAgencyDashboardFilters() {
-        var $dashboard = $('.polar-hr-dashboard');
-        var $statusFilter = $('#polar-agency-status-filter');
-        var $searchInput = $('#polar-agency-search');
-        var $ordersSection = $dashboard.find('.polar-orders-section');
-
-        if (!$dashboard.length || !$ordersSection.length) {
-            return;
-        }
-        if (!$statusFilter.length || !$searchInput.length) {
-            return;
+        function getAgencyFilterContext() {
+            var $statusFilter = $('#polar-agency-status-filter');
+            var $searchInput = $('#polar-agency-search');
+            var $ordersSection = $statusFilter.length ? $statusFilter.closest('.polar-orders-section') : $searchInput.closest('.polar-orders-section');
+            if (!$ordersSection.length && $searchInput.length) {
+                $ordersSection = $searchInput.closest('.polar-orders-section');
+            }
+            return { $statusFilter: $statusFilter, $searchInput: $searchInput, $ordersSection: $ordersSection };
         }
 
         function filterAgencyOrders() {
+            var ctx = getAgencyFilterContext();
+            var $statusFilter = ctx.$statusFilter;
+            var $searchInput = ctx.$searchInput;
+            var $ordersSection = ctx.$ordersSection;
+
+            if (typeof console !== 'undefined' && console.log) {
+                console.log('[Polar Agency Filter] filterAgencyOrders ran', {
+                    hasOrdersSection: !!$ordersSection.length,
+                    hasStatusFilter: !!$statusFilter.length,
+                    hasSearchInput: !!$searchInput.length,
+                    searchValue: ($searchInput.val() || '').trim(),
+                    statusValue: ($statusFilter.val() || '').trim()
+                });
+            }
+
+            if (!$ordersSection.length || !$statusFilter.length || !$searchInput.length) {
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('[Polar Agency Filter] Early return: missing context', {
+                        ordersSection: $ordersSection.length,
+                        statusFilter: $statusFilter.length,
+                        searchInput: $searchInput.length
+                    });
+                }
+                return;
+            }
+
             var statusValue = ($statusFilter.val() || '').trim();
             var searchValue = ($searchInput.val() || '').toLowerCase().trim();
             var $activeContent = $ordersSection.find('.polar-tab-content.active');
+
+            // Fallback: if no .active (e.g. hash set before click), use hash or first tab
+            if (!$activeContent.length) {
+                var tabId = (typeof location !== 'undefined' && location.hash && location.hash.indexOf('tab-') !== -1)
+                    ? location.hash.replace('#tab-', '') : 'pending';
+                $activeContent = $ordersSection.find('#tab-' + tabId);
+                if ($activeContent.length) {
+                    $ordersSection.find('.polar-tab-content').removeClass('active');
+                    $ordersSection.find('.polar-tab').removeClass('active');
+                    $activeContent.addClass('active');
+                    $ordersSection.find('.polar-tab[data-tab="' + tabId + '"]').addClass('active');
+                }
+            }
+            if (!$activeContent.length) {
+                $activeContent = $ordersSection.find('.polar-tab-content').first();
+            }
+
             var $orders = $activeContent.find('.polar-order-item');
             var visibleCount = 0;
 
-            $orders.each(function () {
+            if (typeof console !== 'undefined' && console.log) {
+                console.log('[Polar Agency Filter] Context', {
+                    activeContentId: $activeContent.attr('id'),
+                    activeContentLength: $activeContent.length,
+                    ordersCount: $orders.length,
+                    statusValue: statusValue,
+                    searchValue: searchValue
+                });
+            }
+
+            $orders.each(function (index) {
                 var $order = $(this);
                 var orderStatus = ($order.attr('data-status') || '').trim();
-                var orderId = $order.attr('data-order-id') || '';
+                var orderId = String($order.attr('data-order-id') || '');
                 var orderText = $order.text().toLowerCase();
-                var customerName = ($order.find('.customer-name').text() || '').toLowerCase();
-                var phoneNumber = ($order.find('.phone-number').text() || '').toLowerCase();
+                var customerName = ($order.find('.customer-name').text() || '').toLowerCase().trim();
+                var phoneNumber = ($order.find('.phone-number').text() || '').toLowerCase().trim().replace(/\s/g, '');
 
-                var normalizedOrderStatus = String(orderStatus).replace(/^wc-/, '');
-                var normalizedFilterStatus = String(statusValue).replace(/^wc-/, '');
+                var normalizedOrderStatus = orderStatus.replace(/^wc-/, '');
+                var normalizedFilterStatus = statusValue.replace(/^wc-/, '');
 
                 var statusMatch = !statusValue ||
                     orderStatus === statusValue ||
@@ -275,17 +326,33 @@
 
                 var searchMatch = !searchValue ||
                     orderText.indexOf(searchValue) !== -1 ||
-                    String(orderId).indexOf(searchValue) !== -1 ||
+                    orderId.indexOf(searchValue) !== -1 ||
                     customerName.indexOf(searchValue) !== -1 ||
                     phoneNumber.indexOf(searchValue) !== -1;
 
                 if (statusMatch && searchMatch) {
-                    $order.show();
+                    $order.css('display', '');
                     visibleCount++;
                 } else {
-                    $order.hide();
+                    $order.css('display', 'none');
+                }
+
+                if (typeof console !== 'undefined' && console.log && index < 3) {
+                    console.log('[Polar Agency Filter] Order #' + orderId, {
+                        orderId: orderId,
+                        orderStatus: orderStatus,
+                        customerName: customerName,
+                        phoneNumber: phoneNumber,
+                        statusMatch: statusMatch,
+                        searchMatch: searchMatch,
+                        visible: statusMatch && searchMatch
+                    });
                 }
             });
+
+            if (typeof console !== 'undefined' && console.log) {
+                console.log('[Polar Agency Filter] Result', { visibleCount: visibleCount, totalOrders: $orders.length });
+            }
 
             var $emptyState = $activeContent.find('.polar-filter-empty-state');
             if (visibleCount === 0 && $orders.length > 0) {
@@ -302,15 +369,17 @@
             }
         }
 
-        $statusFilter.on('change', filterAgencyOrders);
-        $searchInput.on('input', function () {
-            clearTimeout($searchInput.data('timeout'));
-            $searchInput.data('timeout', setTimeout(filterAgencyOrders, 300));
+        // Delegate so search/filter work even when dashboard is injected after DOM ready
+        $(document).on('input', '#polar-agency-search', function () {
+            clearTimeout($(this).data('polar-timeout'));
+            $(this).data('polar-timeout', setTimeout(filterAgencyOrders, 300));
         });
-        $dashboard.on('click', '.polar-tab', function () {
-            setTimeout(filterAgencyOrders, 80);
+        $(document).on('change', '#polar-agency-status-filter', filterAgencyOrders);
+        $(document).on('click', '.polar-orders-section .polar-tab', function () {
+            setTimeout(filterAgencyOrders, 100);
         });
-        filterAgencyOrders();
+        // Run once on load in case dashboard is already in DOM
+        setTimeout(filterAgencyOrders, 150);
     }
 
     /**
