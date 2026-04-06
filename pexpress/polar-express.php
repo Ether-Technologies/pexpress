@@ -4,7 +4,7 @@
  * Plugin Name: Polar Express
  * Plugin URI: https://github.com/atiqisrak/pexpress
  * Description: Custom WordPress extension designed to enhance manual order processing and delivery workflows for Polar's bulk ice cream service.
- * Version: 1.0.6
+ * Version: 1.0.13
  * Author: Atiq Israk
  * Author URI: https://ethertech.ltd/
  * License: GPL v3 or later
@@ -31,7 +31,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('PEXPRESS_VERSION', '1.0.6');
+define('PEXPRESS_VERSION', '1.0.13');
 define('PEXPRESS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PEXPRESS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PEXPRESS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -195,6 +195,17 @@ class PExpress
         add_action('phpmailer_init', array($this, 'log_wp_mail_emails'), 999);
         add_action('wp_mail_failed', array($this, 'log_wp_mail_failed'), 10, 1);
         add_action('wp_mail_succeeded', array($this, 'log_wp_mail_succeeded'), 10, 1);
+
+        // Define default order status as pending
+        add_filter('woocommerce_default_order_status', array($this, 'set_default_order_status'));
+    }
+
+    /**
+     * Force new orders to 'pending' instead of 'processing'
+     */
+    public function set_default_order_status($status)
+    {
+        return 'pending';
     }
 
     /**

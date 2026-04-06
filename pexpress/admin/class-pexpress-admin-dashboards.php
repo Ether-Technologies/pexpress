@@ -32,6 +32,8 @@ class PExpress_Admin_Dashboards
         $pending_orders = wc_get_orders(array(
             'status' => 'processing',
             'limit' => -1,
+            'orderby' => 'id',
+            'order' => 'DESC',
             'meta_query' => array(
                 array(
                     'key' => '_polar_needs_assignment',
@@ -78,9 +80,7 @@ class PExpress_Admin_Dashboards
                 }
             }
             usort($orders_with_assignment, function ($a, $b) {
-                $tA = $a->get_date_created() ? $a->get_date_created()->getTimestamp() : 0;
-                $tB = $b->get_date_created() ? $b->get_date_created()->getTimestamp() : 0;
-                return $tB - $tA;
+                return $b->get_id() - $a->get_id();
             });
             $orders_with_assignment = array_slice($orders_with_assignment, 0, 300);
         }
@@ -112,7 +112,7 @@ class PExpress_Admin_Dashboards
         $completed_orders = wc_get_orders(array(
             'status' => array('completed', 'wc-polar-complete', 'wc-polar-delivered', 'wc-polar-fridge-returned', 'wc-polar-service-complete', 'wc-polar-customer-served'),
             'limit' => 30,
-            'orderby' => 'date',
+            'orderby' => 'id',
             'order' => 'DESC',
         ));
 
@@ -281,7 +281,7 @@ class PExpress_Admin_Dashboards
         $recent_orders = wc_get_orders(array(
             'status' => 'any',
             'limit' => 100,
-            'orderby' => 'date',
+            'orderby' => 'id',
             'order' => 'DESC',
         ));
 

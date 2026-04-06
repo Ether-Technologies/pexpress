@@ -455,6 +455,8 @@ class PExpress_Core
             $args = array(
                 'status' => 'any',
                 'limit'  => -1,
+                'orderby' => 'id',
+                'order'   => 'DESC',
                 'meta_query' => array(
                     array(
                         'key' => $meta_key,
@@ -468,6 +470,8 @@ class PExpress_Core
             $args = array(
                 'status' => 'any',
                 'limit'  => -1,
+                'orderby' => 'id',
+                'order'   => 'DESC',
                 'meta_key' => $meta_key,
                 'meta_value' => $user_id,
             );
@@ -536,6 +540,8 @@ class PExpress_Core
                 $fallback_args = array(
                     'status' => 'any',
                     'limit'  => -1,
+                    'orderby' => 'id',
+                    'order'   => 'DESC',
                     'meta_query' => array(
                         'relation' => 'OR',
                         array(
@@ -685,7 +691,7 @@ class PExpress_Core
         $args = array(
             'status'     => 'any',
             'limit'     => $limit * 2,
-            'orderby'   => 'date',
+            'orderby'   => 'id',
             'order'     => 'DESC',
             'meta_query' => array(
                 'relation' => 'OR',
