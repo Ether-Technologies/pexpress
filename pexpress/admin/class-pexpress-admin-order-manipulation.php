@@ -789,6 +789,38 @@ class PExpress_Admin_Order_Manipulation
         $item = $order->get_item($item_id);
         if ($item instanceof WC_Order_Item) {
             $item = apply_filters('woocommerce_ajax_order_item', $item, $item_id, $order, $product);
+            
+            // PEXPRESS: FIX DISCOUNT CALCULATION
+            if ($item instanceof WC_Order_Item_Product) {
+                $item_product = $item->get_product();
+                if ($item_product) {
+                    $regular_price = $item_product->get_regular_price();
+                    if ($regular_price !== '' && $regular_price > $item_product->get_price()) {
+                        $item->set_subtotal((float) $regular_price * $item->get_quantity());
+                        $item->save();
+                    }
+                }
+                
+                // Fix bundled children if any were added alongside
+                if (function_exists('wc_pb_get_bundled_order_items')) {
+                    $bundled_items = wc_pb_get_bundled_order_items($item, $order);
+                    if (!empty($bundled_items)) {
+                        foreach ($bundled_items as $child_item) {
+                            if ($child_item instanceof WC_Order_Item_Product) {
+                                $child_product = $child_item->get_product();
+                                if ($child_product) {
+                                    $child_reg_price = $child_product->get_regular_price();
+                                    if ($child_reg_price !== '' && $child_reg_price > $child_product->get_price()) {
+                                        $child_item->set_subtotal((float) $child_reg_price * $child_item->get_quantity());
+                                        $child_item->save();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
             do_action('woocommerce_ajax_add_order_item_meta', $item_id, $item, $order);
         }
 
@@ -1096,6 +1128,38 @@ class PExpress_Admin_Order_Manipulation
         $new_item_id = $order->add_product($new_product, $quantity);
         if (!$new_item_id) {
             wp_send_json_error(array('message' => __('Failed to add replacement item.', 'pexpress')));
+        }
+        
+        // PEXPRESS: FIX DISCOUNT CALCULATION
+        $new_item = $order->get_item($new_item_id);
+        if ($new_item instanceof WC_Order_Item_Product) {
+            $new_item_product = $new_item->get_product();
+            if ($new_item_product) {
+                $regular_price = $new_item_product->get_regular_price();
+                if ($regular_price !== '' && $regular_price > $new_item_product->get_price()) {
+                    $new_item->set_subtotal((float) $regular_price * $new_item->get_quantity());
+                    $new_item->save();
+                }
+            }
+            
+            // Fix bundled children
+            if (function_exists('wc_pb_get_bundled_order_items')) {
+                $bundled_items = wc_pb_get_bundled_order_items($new_item, $order);
+                if (!empty($bundled_items)) {
+                    foreach ($bundled_items as $child_item) {
+                        if ($child_item instanceof WC_Order_Item_Product) {
+                            $child_product = $child_item->get_product();
+                            if ($child_product) {
+                                $child_reg_price = $child_product->get_regular_price();
+                                if ($child_reg_price !== '' && $child_reg_price > $child_product->get_price()) {
+                                    $child_item->set_subtotal((float) $child_reg_price * $child_item->get_quantity());
+                                    $child_item->save();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         $order->calculate_totals();

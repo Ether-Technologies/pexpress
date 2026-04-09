@@ -108,13 +108,6 @@ function polar_agency_dashboard_shortcode($atts)
     $pending_orders = wc_get_orders(array(
         'status' => 'processing',
         'limit' => -1,
-        'meta_query' => array(
-            array(
-                'key' => '_polar_needs_assignment',
-                'value' => 'yes',
-                'compare' => '=',
-            ),
-        ),
     ));
 
     // Get all HR (formerly delivery), fridge, and distributor users (needed for fallback and template)
@@ -170,6 +163,11 @@ function polar_agency_dashboard_shortcode($atts)
         }
         $status = $order->get_status();
         $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
+
+        if ($status === 'processing' || $normalized === 'wc-processing') {
+            continue;
+        }
+
         if (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses_wc, true)) {
             continue;
         }

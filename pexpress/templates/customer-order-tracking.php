@@ -61,6 +61,11 @@ if (!function_exists('pexpress_get_status_label')) {
 if (!function_exists('pexpress_get_overall_status')) {
     function pexpress_get_overall_status($order_id)
     {
+        $order = wc_get_order($order_id);
+        if ($order && $order->get_status() === 'cancelled') {
+            return 'cancelled';
+        }
+
         $delivery_status = PExpress_Core::get_role_status($order_id, 'delivery');
         if (empty($delivery_status) || !is_string($delivery_status)) {
             $delivery_status = 'pending';
@@ -194,6 +199,8 @@ if (!empty($customer_orders) && is_array($customer_orders)) {
             $status_label = '';
             if ($overall_status === 'completed') {
                 $status_label = __('Completed', 'pexpress');
+            } elseif ($overall_status === 'cancelled') {
+                $status_label = __('Cancelled', 'pexpress');
             } elseif ($overall_status === 'in_progress') {
                 $status_label = __('In Progress', 'pexpress');
             } else {
@@ -296,6 +303,9 @@ if (defined('PEXPRESS_PLUGIN_DIR')) {
                 if ($overall_status === 'completed') {
                     $current_status_text = __('Delivered', 'pexpress');
                     $current_status_icon = '✓';
+                } elseif ($overall_status === 'cancelled') {
+                    $current_status_text = __('Cancelled', 'pexpress');
+                    $current_status_icon = '❌';
                 } elseif ($overall_status === 'in_progress') {
                     if ($distributor_status === 'distributor_prep') {
                         $current_status_text = __('Preparing', 'pexpress');

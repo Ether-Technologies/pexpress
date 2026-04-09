@@ -34,13 +34,6 @@ class PExpress_Admin_Dashboards
             'limit' => -1,
             'orderby' => 'id',
             'order' => 'DESC',
-            'meta_query' => array(
-                array(
-                    'key' => '_polar_needs_assignment',
-                    'value' => 'yes',
-                    'compare' => '=',
-                ),
-            ),
         ));
 
         // Get all HR (formerly delivery), fridge, and distributor users (needed for fallback and template)
@@ -97,6 +90,12 @@ class PExpress_Admin_Dashboards
             }
             $status = $order->get_status();
             $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
+            
+            // Skip processing since it belongs to Pending Assignment instead
+            if ($status === 'processing' || $normalized === 'wc-processing') {
+                continue;
+            }
+
             if (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses_wc, true)) {
                 continue;
             }
@@ -307,7 +306,7 @@ class PExpress_Admin_Dashboards
             $normalized = (strpos($status, 'wc-') === 0) ? $status : 'wc-' . $status;
             $needs_assignment = PExpress_Core::get_order_meta($order_id, '_polar_needs_assignment');
 
-            if ($needs_assignment === 'yes') {
+            if ($needs_assignment === 'yes' || $status === 'processing' || $normalized === 'wc-processing') {
                 $pending_orders[] = $order;
             } elseif (in_array($status, $terminal_statuses, true) || in_array($normalized, $terminal_statuses_wc, true)) {
                 $completed_orders[] = $order;
