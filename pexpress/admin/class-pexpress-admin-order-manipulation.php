@@ -803,8 +803,8 @@ class PExpress_Admin_Order_Manipulation
 
                     $discounted_price = $regular_price;
                     if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $quantity);
-                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $quantity, 0, 'discounted_price', true, false);
+                        if ($discount_res !== false && is_numeric($discount_res)) {
                             $discounted_price = (float) $discount_res;
                         }
                     } elseif ($item_product->get_price() < $regular_price) {
@@ -833,8 +833,8 @@ class PExpress_Admin_Order_Manipulation
 
                                     $child_discounted = $child_reg_price;
                                     if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_qty);
-                                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_qty, 0, 'discounted_price', true, false);
+                                        if ($discount_res !== false && is_numeric($discount_res)) {
                                             $child_discounted = (float) $discount_res;
                                         }
                                     } elseif ($child_product->get_price() < $child_reg_price) {
@@ -1041,8 +1041,8 @@ class PExpress_Admin_Order_Manipulation
 
                     $discounted_price = $regular_price;
                     if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $new_quantity_for_calc);
-                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $new_quantity_for_calc, 0, 'discounted_price', true, false);
+                        if ($discount_res !== false && is_numeric($discount_res)) {
                             $discounted_price = (float) $discount_res;
                         }
                     } elseif ($item_product->get_price() < $regular_price) {
@@ -1095,8 +1095,8 @@ class PExpress_Admin_Order_Manipulation
 
                                 $child_discounted = $child_reg_price;
                                 if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                                    $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_new_qty);
-                                    if (!empty($discount_res) && is_numeric($discount_res)) {
+                                    $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_new_qty, 0, 'discounted_price', true, false);
+                                    if ($discount_res !== false && is_numeric($discount_res)) {
                                         $child_discounted = (float) $discount_res;
                                     }
                                 } elseif ($child_product->get_price() < $child_reg_price) {
