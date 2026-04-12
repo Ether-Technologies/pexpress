@@ -6,6 +6,7 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
+/woo-discount-rules
 # Environment variables
 .env
 .env.local

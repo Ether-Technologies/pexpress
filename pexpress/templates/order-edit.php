@@ -725,6 +725,11 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
             </div>
 
             <!-- Forward to Distribution -->
+            <?php
+            $minimum_order_amount = 5000;
+            $current_total = (float) $order->get_total();
+            $is_below_minimum = $current_total < $minimum_order_amount;
+            ?>
             <div class="polar-order-item polar-forward-card">
                 <div class="order-header">
                     <h4><?php esc_html_e('Forward to SR', 'pexpress'); ?></h4>
@@ -766,7 +771,8 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                         placeholder="<?php esc_attr_e('Provide any context SR should know before assignment...', 'pexpress'); ?>"><?php echo esc_textarea($forward_note); ?></textarea>
                     <div class="forward-actions">
                         <button type="button" class="polar-btn polar-btn-primary polar-forward-to-hr"
-                            data-order-id="<?php echo esc_attr($order_id); ?>" <?php echo $is_forwarded && !$needs_assignment ? 'disabled' : ''; ?>>
+                            data-order-id="<?php echo esc_attr($order_id); ?>" <?php echo ($is_forwarded && !$needs_assignment) || $is_below_minimum ? 'disabled' : ''; ?>
+                            title="<?php echo $is_below_minimum ? esc_attr__(sprintf('Minimum order total value %s is required', wp_strip_all_tags(wc_price($minimum_order_amount))), 'pexpress') : ''; ?>">
                             <?php echo esc_html(str_replace('HR', 'SR', $forward_button_label)); ?>
                         </button>
                         <?php if ($is_forwarded): ?>
@@ -793,10 +799,18 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                         <h4><?php esc_html_e('Order Actions', 'pexpress'); ?></h4>
                     </div>
                     <div class="order-actions-body">
+                        <?php if ($is_below_minimum): ?>
+                            <div class="notice notice-warning inline" style="margin-bottom: 15px; padding: 10px; border-left: 4px solid #dba617; background: #fff8e5;">
+                                <p style="margin: 0;"><strong><?php esc_html_e('Warning:', 'pexpress'); ?></strong> <?php printf(esc_html__('Minimum order value is %s. Current total is less than the required amount. Submission operations are disabled.', 'pexpress'), wp_strip_all_tags(wc_price($minimum_order_amount))); ?></p>
+                            </div>
+                        <?php endif; ?>
+                        
                         <?php if (!$order_confirmed): ?>
                             <button type="button" class="polar-btn polar-btn-success polar-confirm-order"
                                 data-order-id="<?php echo esc_attr($order_id); ?>"
-                                data-nonce="<?php echo esc_attr(wp_create_nonce('polar_confirm_order')); ?>">
+                                data-nonce="<?php echo esc_attr(wp_create_nonce('polar_confirm_order')); ?>"
+                                <?php echo $is_below_minimum ? 'disabled' : ''; ?>
+                                title="<?php echo $is_below_minimum ? esc_attr__(sprintf('Minimum order total value %s is required', wp_strip_all_tags(wc_price($minimum_order_amount))), 'pexpress') : ''; ?>">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path
                                         d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
@@ -816,8 +830,8 @@ $forward_button_label = $is_forwarded ? __('Update Forwarding', 'pexpress') : __
                                 data-order-id="<?php echo esc_attr($order_id); ?>"
                                 data-nonce="<?php echo esc_attr(wp_create_nonce('polar_complete_order')); ?>"
                                 style="margin-top: 10px;"
-                                <?php echo !$order_confirmed ? 'disabled' : ''; ?>
-                                title="<?php echo !$order_confirmed ? esc_attr__('Please confirm the order first', 'pexpress') : ''; ?>">
+                                <?php echo !$order_confirmed || $is_below_minimum ? 'disabled' : ''; ?>
+                                title="<?php echo $is_below_minimum ? esc_attr__(sprintf('Minimum order total value %s is required', wp_strip_all_tags(wc_price($minimum_order_amount))), 'pexpress') : (!$order_confirmed ? esc_attr__('Please confirm the order first', 'pexpress') : ''); ?>">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path
                                         d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"

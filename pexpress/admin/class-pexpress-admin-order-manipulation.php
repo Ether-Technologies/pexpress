@@ -794,11 +794,26 @@ class PExpress_Admin_Order_Manipulation
             if ($item instanceof WC_Order_Item_Product) {
                 $item_product = $item->get_product();
                 if ($item_product) {
+                    $quantity = $item->get_quantity();
                     $regular_price = $item_product->get_regular_price();
-                    if ($regular_price !== '' && $regular_price > $item_product->get_price()) {
-                        $item->set_subtotal((float) $regular_price * $item->get_quantity());
-                        $item->save();
+                    if ($regular_price === '') {
+                        $regular_price = $item_product->get_price();
                     }
+                    $regular_price = (float) $regular_price;
+
+                    $discounted_price = $regular_price;
+                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
+                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $quantity);
+                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                            $discounted_price = (float) $discount_res;
+                        }
+                    } elseif ($item_product->get_price() < $regular_price) {
+                        $discounted_price = (float) $item_product->get_price();
+                    }
+
+                    $item->set_subtotal((float) $regular_price * $quantity);
+                    $item->set_total((float) $discounted_price * $quantity);
+                    $item->save();
                 }
                 
                 // Fix bundled children if any were added alongside
@@ -809,11 +824,26 @@ class PExpress_Admin_Order_Manipulation
                             if ($child_item instanceof WC_Order_Item_Product) {
                                 $child_product = $child_item->get_product();
                                 if ($child_product) {
+                                    $child_qty = $child_item->get_quantity();
                                     $child_reg_price = $child_product->get_regular_price();
-                                    if ($child_reg_price !== '' && $child_reg_price > $child_product->get_price()) {
-                                        $child_item->set_subtotal((float) $child_reg_price * $child_item->get_quantity());
-                                        $child_item->save();
+                                    if ($child_reg_price === '') {
+                                        $child_reg_price = $child_product->get_price();
                                     }
+                                    $child_reg_price = (float) $child_reg_price;
+
+                                    $child_discounted = $child_reg_price;
+                                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
+                                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_qty);
+                                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                                            $child_discounted = (float) $discount_res;
+                                        }
+                                    } elseif ($child_product->get_price() < $child_reg_price) {
+                                        $child_discounted = (float) $child_product->get_price();
+                                    }
+
+                                    $child_item->set_subtotal((float) $child_reg_price * $child_qty);
+                                    $child_item->set_total((float) $child_discounted * $child_qty);
+                                    $child_item->save();
                                 }
                             }
                         }
@@ -1001,8 +1031,31 @@ class PExpress_Admin_Order_Manipulation
                 $item->set_subtotal($line_total);
                 $item->set_total($line_total);
             } else {
-                $new_subtotal = (float) wc_format_decimal($unit_price_actual * $new_quantity_for_calc);
-                $new_total = (float) wc_format_decimal($unit_price_discounted * $new_quantity_for_calc);
+                $item_product = $item->get_product();
+                if ($item_product) {
+                    $regular_price = $item_product->get_regular_price();
+                    if ($regular_price === '') {
+                        $regular_price = $item_product->get_price();
+                    }
+                    $regular_price = (float) $regular_price;
+
+                    $discounted_price = $regular_price;
+                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
+                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $new_quantity_for_calc);
+                        if (!empty($discount_res) && is_numeric($discount_res)) {
+                            $discounted_price = (float) $discount_res;
+                        }
+                    } elseif ($item_product->get_price() < $regular_price) {
+                        $discounted_price = (float) $item_product->get_price();
+                    }
+
+                    $new_subtotal = (float) wc_format_decimal($regular_price * $new_quantity_for_calc);
+                    $new_total = (float) wc_format_decimal($discounted_price * $new_quantity_for_calc);
+                } else {
+                    $new_subtotal = (float) wc_format_decimal($unit_price_actual * $new_quantity_for_calc);
+                    $new_total = (float) wc_format_decimal($unit_price_discounted * $new_quantity_for_calc);
+                }
+                
                 $item->set_subtotal($new_subtotal);
                 $item->set_total($new_total);
             }
@@ -1032,12 +1085,33 @@ class PExpress_Admin_Order_Manipulation
                             $child_item->set_quantity($child_new_qty);
 
                             // Update totals for child
-                            $child_total = $child_item->get_total();
-                            $child_unit_price = ($child_old_qty > 0) ? $child_total / $child_old_qty : 0;
-                            $new_child_total = wc_format_decimal($child_unit_price * $child_new_qty);
+                            $child_product = $child_item->get_product();
+                            if ($child_product) {
+                                $child_reg_price = $child_product->get_regular_price();
+                                if ($child_reg_price === '') {
+                                    $child_reg_price = $child_product->get_price();
+                                }
+                                $child_reg_price = (float) $child_reg_price;
 
-                            $child_item->set_subtotal($new_child_total);
-                            $child_item->set_total($new_child_total);
+                                $child_discounted = $child_reg_price;
+                                if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
+                                    $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_new_qty);
+                                    if (!empty($discount_res) && is_numeric($discount_res)) {
+                                        $child_discounted = (float) $discount_res;
+                                    }
+                                } elseif ($child_product->get_price() < $child_reg_price) {
+                                    $child_discounted = (float) $child_product->get_price();
+                                }
+
+                                $child_item->set_subtotal((float) wc_format_decimal($child_reg_price * $child_new_qty));
+                                $child_item->set_total((float) wc_format_decimal($child_discounted * $child_new_qty));
+                            } else {
+                                $child_total = $child_item->get_total();
+                                $child_unit_price = ($child_old_qty > 0) ? $child_total / $child_old_qty : 0;
+                                $new_child_total = wc_format_decimal($child_unit_price * $child_new_qty);
+                                $child_item->set_subtotal($new_child_total);
+                                $child_item->set_total($new_child_total);
+                            }
                             $child_item->save();
                         }
                     }
