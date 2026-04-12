@@ -787,62 +787,77 @@ class PExpress_Admin_Order_Manipulation
         }
 
         $item = $order->get_item($item_id);
-        if ($item instanceof WC_Order_Item) {
+        if ($item instanceof WC_Order_Item_Product) {
             $item = apply_filters('woocommerce_ajax_order_item', $item, $item_id, $order, $product);
             
             // PEXPRESS: FIX DISCOUNT CALCULATION
-            if ($item instanceof WC_Order_Item_Product) {
-                $item_product = $item->get_product();
-                if ($item_product) {
-                    $quantity = $item->get_quantity();
-                    $regular_price = $item_product->get_regular_price();
-                    if ($regular_price === '') {
-                        $regular_price = $item_product->get_price();
-                    }
-                    $regular_price = (float) $regular_price;
+            $item_product = $item->get_product();
+            if ($item_product) {
+                $quantity = $item->get_quantity();
+                $regular_price = (float) ($item_product->get_regular_price() ? $item_product->get_regular_price() : $item_product->get_price());
+                $discounted_price = $this->get_calculated_unit_price($item_product, $quantity);
 
-                    $discounted_price = $regular_price;
-                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $quantity, 0, 'discounted_price', true, false);
-                        if ($discount_res !== false && is_numeric($discount_res)) {
-                            $discounted_price = (float) $discount_res;
-                        }
-                    } elseif ($item_product->get_price() < $regular_price) {
-                        $discounted_price = (float) $item_product->get_price();
-                    }
-
-                    $item->set_subtotal((float) $regular_price * $quantity);
-                    $item->set_total((float) $discounted_price * $quantity);
-                    $item->save();
+                $item->set_subtotal($regular_price * $quantity);
+                $item->set_total($discounted_price * $quantity);
+                $item->save();
+            }
+            
+            // PEXPRESS: Fix Bundle Breakdown on Addition
+            // If the item is a bundle parent, we need to ensure child items are added and linked
+            if ($item_product && $item_product->is_type('bundle')) {
+                // Try to get bundled items using WCPB methods
+                $bundled_items = array();
+                if (method_exists($item_product, 'get_bundled_items')) {
+                    $bundled_items = $item_product->get_bundled_items();
                 }
-                
-                // Fix bundled children if any were added alongside
+
+                if (!empty($bundled_items)) {
+                    $bundle_cart_key = md5(microtime() . $item_id);
+                    $item->add_meta_data('_bundle_cart_key', $bundle_cart_key, true);
+                    $item->save();
+
+                    foreach ($bundled_items as $bundled_item) {
+                        $child_product_id = $bundled_item->get_product_id();
+                        $child_product = wc_get_product($child_product_id);
+                        if (!$child_product) continue;
+
+                        $rel_qty = method_exists($bundled_item, 'get_quantity_default') ? $bundled_item->get_quantity_default() : 1;
+                        $child_qty = $rel_qty * $quantity;
+
+                        $child_item_id = $order->add_product($child_product, $child_qty, array('order' => $order));
+                        if ($child_item_id) {
+                            $child_item = $order->get_item($child_item_id);
+                            if ($child_item instanceof WC_Order_Item_Product) {
+                                // Link to parent
+                                $child_item->add_meta_data('_bundled_by', $bundle_cart_key, true);
+                                $child_item->add_meta_data('_bundle_group_id', $bundled_item->get_id(), true);
+                                
+                                // Pricing for child
+                                $child_reg_price = (float) ($child_product->get_regular_price() ? $child_product->get_regular_price() : $child_product->get_price());
+                                $child_discounted = $this->get_calculated_unit_price($child_product, $child_qty);
+
+                                $child_item->set_subtotal($child_reg_price * $child_qty);
+                                $child_item->set_total($child_discounted * $child_qty);
+                                $child_item->save();
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Legacy check: if bundled items were added anyway by core/hooks, update their pricing
                 if (function_exists('wc_pb_get_bundled_order_items')) {
-                    $bundled_items = wc_pb_get_bundled_order_items($item, $order);
-                    if (!empty($bundled_items)) {
-                        foreach ($bundled_items as $child_item) {
+                    $bundled_items_existing = wc_pb_get_bundled_order_items($item, $order);
+                    if (!empty($bundled_items_existing)) {
+                        foreach ($bundled_items_existing as $child_item) {
                             if ($child_item instanceof WC_Order_Item_Product) {
                                 $child_product = $child_item->get_product();
                                 if ($child_product) {
                                     $child_qty = $child_item->get_quantity();
-                                    $child_reg_price = $child_product->get_regular_price();
-                                    if ($child_reg_price === '') {
-                                        $child_reg_price = $child_product->get_price();
-                                    }
-                                    $child_reg_price = (float) $child_reg_price;
+                                    $child_reg_price = (float) ($child_product->get_regular_price() ? $child_product->get_regular_price() : $child_product->get_price());
+                                    $child_discounted = $this->get_calculated_unit_price($child_product, $child_qty);
 
-                                    $child_discounted = $child_reg_price;
-                                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_qty, 0, 'discounted_price', true, false);
-                                        if ($discount_res !== false && is_numeric($discount_res)) {
-                                            $child_discounted = (float) $discount_res;
-                                        }
-                                    } elseif ($child_product->get_price() < $child_reg_price) {
-                                        $child_discounted = (float) $child_product->get_price();
-                                    }
-
-                                    $child_item->set_subtotal((float) $child_reg_price * $child_qty);
-                                    $child_item->set_total((float) $child_discounted * $child_qty);
+                                    $child_item->set_subtotal($child_reg_price * $child_qty);
+                                    $child_item->set_total($child_discounted * $child_qty);
                                     $child_item->save();
                                 }
                             }
@@ -1039,15 +1054,7 @@ class PExpress_Admin_Order_Manipulation
                     }
                     $regular_price = (float) $regular_price;
 
-                    $discounted_price = $regular_price;
-                    if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                        $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $item_product, $new_quantity_for_calc, 0, 'discounted_price', true, false);
-                        if ($discount_res !== false && is_numeric($discount_res)) {
-                            $discounted_price = (float) $discount_res;
-                        }
-                    } elseif ($item_product->get_price() < $regular_price) {
-                        $discounted_price = (float) $item_product->get_price();
-                    }
+                    $discounted_price = $this->get_calculated_unit_price($item_product, $new_quantity_for_calc);
 
                     $new_subtotal = (float) wc_format_decimal($regular_price * $new_quantity_for_calc);
                     $new_total = (float) wc_format_decimal($discounted_price * $new_quantity_for_calc);
@@ -1093,18 +1100,10 @@ class PExpress_Admin_Order_Manipulation
                                 }
                                 $child_reg_price = (float) $child_reg_price;
 
-                                $child_discounted = $child_reg_price;
-                                if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
-                                    $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($child_reg_price, $child_product, $child_new_qty, 0, 'discounted_price', true, false);
-                                    if ($discount_res !== false && is_numeric($discount_res)) {
-                                        $child_discounted = (float) $discount_res;
-                                    }
-                                } elseif ($child_product->get_price() < $child_reg_price) {
-                                    $child_discounted = (float) $child_product->get_price();
-                                }
+                                $child_discounted = $this->get_calculated_unit_price($child_product, $child_new_qty);
 
-                                $child_item->set_subtotal((float) wc_format_decimal($child_reg_price * $child_new_qty));
-                                $child_item->set_total((float) wc_format_decimal($child_discounted * $child_new_qty));
+                                $child_item->set_subtotal($child_reg_price * $child_new_qty);
+                                $child_item->set_total($child_discounted * $child_new_qty);
                             } else {
                                 $child_total = $child_item->get_total();
                                 $child_unit_price = ($child_old_qty > 0) ? $child_total / $child_old_qty : 0;
@@ -1674,5 +1673,46 @@ class PExpress_Admin_Order_Manipulation
             $classes .= ' polar-order-edit-page';
         }
         return $classes;
+    }
+
+    /**
+     * Get calculated unit price with WDR integration and 15% fallback
+     * 
+     * @param WC_Product $product
+     * @param int $quantity
+     * @return float
+     */
+    private function get_calculated_unit_price($product, $quantity)
+    {
+        $regular_price = $product->get_regular_price();
+        if ($regular_price === '') {
+            $regular_price = $product->get_price();
+        }
+        $regular_price = (float) $regular_price;
+
+        $discounted_price = $regular_price;
+        $found_wdr_discount = false;
+
+        if (class_exists('\Wdr\App\Controllers\ManageDiscount')) {
+            // Manual request = true, is_cart = false
+            $discount_res = \Wdr\App\Controllers\ManageDiscount::calculateProductDiscountPrice($regular_price, $product, $quantity, 0, 'discounted_price', true, false);
+            if ($discount_res !== false && is_numeric($discount_res)) {
+                $discounted_price = (float) $discount_res;
+                // Consider it a real discount only if it's less than regular price
+                if ($discounted_price < $regular_price) {
+                    $found_wdr_discount = true;
+                }
+            }
+        } elseif ($product->get_price() < $regular_price) {
+            $discounted_price = (float) $product->get_price();
+            $found_wdr_discount = true;
+        }
+
+        // FALLBACK: If no discount found from rules, apply a flat 15% discount as requested
+        if (!$found_wdr_discount) {
+            $discounted_price = $regular_price * 0.85; // 15% discount
+        }
+
+        return $discounted_price;
     }
 }
